@@ -7,7 +7,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Room {
-    private String roomType;
+    private String roomType;  // SINGLE, DOUBLE, SUITE
     private double pricePerNight;
     private int totalRooms;
     private int availableRooms;
