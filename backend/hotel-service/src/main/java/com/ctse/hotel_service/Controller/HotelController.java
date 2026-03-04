@@ -97,5 +97,13 @@ public class HotelController {
                 hotelService.checkAvailability(id, roomType)
         );
     }
+
+    // RESERVE ROOM
+    @PutMapping("/{id}/reserve")
+    public ResponseEntity<Hotel> reserveRoom(
+            @PathVariable String id,
+            @RequestParam String roomType) {
+        return ResponseEntity.ok(hotelService.reserveRoom(id, roomType));
+    }
     
 }
