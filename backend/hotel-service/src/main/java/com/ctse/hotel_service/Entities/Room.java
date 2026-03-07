@@ -1,5 +1,6 @@
 package com.ctse.hotel_service.Entities;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 @Getter
@@ -7,9 +8,10 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Room {
-    private String roomType;  // SINGLE, DOUBLE, SUITE
+    @NotNull
+    private RoomType roomType; // SINGLE, DOUBLE, SUITE
     private double pricePerNight;
     private int totalRooms;
     private int availableRooms;
-    
+
 }
