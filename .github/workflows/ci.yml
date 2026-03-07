@@ -1,0 +1,42 @@
+name: CTSE CI Pipeline
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: temurin
+        java-version: 17
+
+    - name: Build Hotel Service
+      run: |
+        cd backend/hotel-service
+        ./mvnw clean install
+
+    - name: Build Booking Service
+      run: |
+        cd backend/booking-service
+        ./mvnw clean install
+
+    - name: Build Notify Analytics Service
+      run: |
+        cd backend/notify-analytics-service
+        ./mvnw clean install
+
+    - name: Build Payment Service
+      run: |
+        cd backend/payment-service
+        ./mvnw clean install
