@@ -24,7 +24,15 @@ jobs:
       - name: Build Hotel Service
         working-directory: backend/hotel-service
         run: |
-          bash ./mvnw clean install
+          chmod +x ./mvnw
+          ./mvnw clean install
+
+      # SONARCLOUD SCAN
+      - name: SonarCloud Scan
+        working-directory: backend/hotel-service
+        run: |
+          chmod +x ./mvnw
+          ./mvnw sonar:sonar -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
       # LOGIN TO DOCKER HUB
       - name: Login to DockerHub
