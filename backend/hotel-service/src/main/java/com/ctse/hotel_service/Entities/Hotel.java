@@ -11,6 +11,7 @@ import jakarta.validation.constraints.NotBlank;
 
 import java.util.List;
 
+// Hotel Entity
 @Document(collection = "hotels")
 @Getter
 @Setter
