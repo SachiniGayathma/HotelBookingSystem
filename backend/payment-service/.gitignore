@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Ignore Spring Boot properties with secrets
+backend/payment-service/src/main/resources/application.properties
