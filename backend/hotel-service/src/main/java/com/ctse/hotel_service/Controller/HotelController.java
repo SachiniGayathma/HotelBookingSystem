@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import jakarta.validation.Valid;
 
@@ -23,6 +24,7 @@ import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
 @RequestMapping("/hotels")
+@CrossOrigin(origins = { "http://localhost:5173", "http://127.0.0.1:5173" })
 public class HotelController {
     private final HotelService hotelService;
 
@@ -30,7 +32,7 @@ public class HotelController {
         this.hotelService = hotelService;
     }
 
-    //CREATE
+    // CREATE
     @Operation(summary = "Create a new hotel")
     @PostMapping
     public ResponseEntity<Hotel> createHotel(@Valid @RequestBody Hotel hotel) {
@@ -45,7 +47,7 @@ public class HotelController {
     }
 
     // READ ONE
-    @Operation(summary= "Get a hotel by ID")
+    @Operation(summary = "Get a hotel by ID")
     @GetMapping("/{id}")
     public ResponseEntity<Hotel> getHotel(@PathVariable String id) {
         return ResponseEntity.ok(hotelService.getHotelById(id));
@@ -94,8 +96,8 @@ public class HotelController {
     @Operation(summary = "Add a room to a hotel")
     @PostMapping("/{id}/rooms")
     public ResponseEntity<Hotel> addRoom(
-        @PathVariable String id,
-        @Valid @RequestBody Room room) {
+            @PathVariable String id,
+            @Valid @RequestBody Room room) {
 
         return ResponseEntity.ok(hotelService.addRoomToHotel(id, room));
     }
@@ -104,12 +106,11 @@ public class HotelController {
     @Operation(summary = "Check room availability")
     @GetMapping("/{id}/availability")
     public ResponseEntity<Boolean> checkAvailability(
-        @PathVariable String id,
-        @RequestParam String roomType) {
+            @PathVariable String id,
+            @RequestParam String roomType) {
 
         return ResponseEntity.ok(
-                hotelService.checkAvailability(id, roomType)
-        );
+                hotelService.checkAvailability(id, roomType));
     }
 
     // RESERVE ROOM
@@ -120,5 +121,5 @@ public class HotelController {
             @RequestParam String roomType) {
         return ResponseEntity.ok(hotelService.reserveRoom(id, roomType));
     }
-    
+
 }
