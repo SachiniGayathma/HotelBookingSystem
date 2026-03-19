@@ -27,8 +27,9 @@ jobs:
           chmod +x ./mvnw
           ./mvnw clean install
 
-      # SONARCLOUD SCAN
+      # SONARCLOUD SCAN (ONLY WHEN PR TARGET IS MAIN)
       - name: SonarCloud Scan
+        if: github.base_ref == 'main'
         working-directory: backend/hotel-service
         run: |
           chmod +x ./mvnw
