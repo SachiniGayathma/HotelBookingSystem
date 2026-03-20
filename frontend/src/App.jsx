@@ -11,6 +11,11 @@ import PaymentHistory from "./components/PaymentHistory";
 import AllPayments from "./components/AllPayments";
 import HomePage from "./pages/HomePage";
 import HotelsPage from "./pages/HotelsPage";
+import AdminHotelsPage from "./pages/AdminHotelsPage";
+import HotelCreatePage from "./pages/HotelCreatePage";
+import HotelEditPage from "./pages/HotelEditPage";
+import HotelDetailsPage from "./pages/HotelDetailsPage";
+import CustomerHotelDetailsPage from "./pages/CustomerHotelDetailsPage";
 
 function App() {
   return (
@@ -18,6 +23,11 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/hotels" element={<HotelsPage />} />
+        <Route path="/hotels/:id" element={<CustomerHotelDetailsPage />} />
+        <Route path="/admin/hotels" element={<AdminHotelsPage />} />
+        <Route path="/admin/hotels/new" element={<HotelCreatePage />} />
+        <Route path="/admin/hotels/:id" element={<HotelDetailsPage />} />
+        <Route path="/admin/hotels/:id/edit" element={<HotelEditPage />} />
         <Route path="/pay" element={<PayButton />} />
         <Route path="/success" element={<Success />} />
         <Route path="/cancel" element={<Cancel />} />
