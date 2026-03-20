@@ -15,6 +15,7 @@ import AdminHotelsPage from "./pages/AdminHotelsPage";
 import HotelCreatePage from "./pages/HotelCreatePage";
 import HotelEditPage from "./pages/HotelEditPage";
 import HotelDetailsPage from "./pages/HotelDetailsPage";
+import CustomerHotelDetailsPage from "./pages/CustomerHotelDetailsPage";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/hotels" element={<HotelsPage />} />
+        <Route path="/hotels/:id" element={<CustomerHotelDetailsPage />} />
         <Route path="/admin/hotels" element={<AdminHotelsPage />} />
         <Route path="/admin/hotels/new" element={<HotelCreatePage />} />
         <Route path="/admin/hotels/:id" element={<HotelDetailsPage />} />

@@ -7,6 +7,10 @@ import {
   searchHotelsByCity,
 } from "../services/hotelApi";
 
+function resolveHotelId(hotel) {
+  return hotel?.id || hotel?._id || "";
+}
+
 export default function HotelsPage() {
   const [hotels, setHotels] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -95,7 +99,7 @@ export default function HotelsPage() {
           </nav>
         </header>
 
-        <section className="mt-6 rounded-3xl border border-rose-100 bg-gradient-to-br from-white via-rose-50 to-orange-50 p-6 shadow-sm sm:p-8">
+        <section className="mt-6 rounded-3xl border border-rose-100 bg-linear-to-br from-white via-rose-50 to-orange-50 p-6 shadow-sm sm:p-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-rose-700">
@@ -168,59 +172,88 @@ export default function HotelsPage() {
             </p>
           ) : null}
 
-          {hotels.map((hotel) => (
-            <article
-              key={hotel.id}
-              className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-            >
-              <div
-                className="h-52 w-full bg-cover bg-center"
-                style={{
-                  backgroundImage: `url(${hotel.images?.[0] || "https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=1200&q=80"})`,
-                }}
-              />
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <h2 className="text-lg font-bold leading-tight">
-                    {hotel.name}
-                  </h2>
-                  <p className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
-                    {hotel.hotelCode}
-                  </p>
-                </div>
-                <p className="mt-1 text-sm text-slate-500">{hotel.city}</p>
-                <p className="mt-2 text-sm text-slate-600">
-                  {hotel.description}
-                </p>
+          {hotels.map((hotel) => {
+            const hotelId = resolveHotelId(hotel);
 
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {(hotel.amenities ?? []).slice(0, 3).map((amenity) => (
-                    <span
-                      key={amenity}
-                      className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700"
+            return (
+              <article
+                key={hotelId || hotel.hotelCode || hotel.name}
+                className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+              >
+                {hotelId ? (
+                  <Link
+                    to={`/hotels/${hotelId}`}
+                    aria-label={`View details for ${hotel.name}`}
+                    className="absolute inset-0 z-0"
+                  />
+                ) : null}
+                <div className="relative z-10">
+                  <div
+                    className="h-52 w-full bg-cover bg-center"
+                    style={{
+                      backgroundImage: `url(${hotel.images?.[0] || "https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=1200&q=80"})`,
+                    }}
+                  />
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <h2 className="text-lg font-bold leading-tight">
+                        {hotel.name}
+                      </h2>
+                      <p className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
+                        {hotel.hotelCode}
+                      </p>
+                    </div>
+                    <p className="mt-1 text-sm text-slate-500">{hotel.city}</p>
+                    <p className="mt-2 text-sm text-slate-600">
+                      {hotel.description}
+                    </p>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {(hotel.amenities ?? []).slice(0, 3).map((amenity) => (
+                        <span
+                          key={amenity}
+                          className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700"
+                        >
+                          {amenity}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                      {hotelId ? (
+                        <Link
+                          to={`/hotels/${hotelId}`}
+                          onClick={(event) => event.stopPropagation()}
+                          className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-center text-xs font-semibold text-rose-700"
+                        >
+                          More info
+                        </Link>
+                      ) : (
+                        <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-semibold text-slate-500">
+                          Info unavailable
+                        </span>
+                      )}
+                      <Link
+                        to="/pay"
+                        onClick={(event) => event.stopPropagation()}
+                        className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700"
+                      >
+                        Book now
+                      </Link>
+                    </div>
+
+                    <Link
+                      to={`/history/user123`}
+                      onClick={(event) => event.stopPropagation()}
+                      className="mt-2 block rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700"
                     >
-                      {amenity}
-                    </span>
-                  ))}
+                      Payment history
+                    </Link>
+                  </div>
                 </div>
-
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <Link
-                    to="/pay"
-                    className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700"
-                  >
-                    Book now
-                  </Link>
-                  <Link
-                    to={`/history/user123`}
-                    className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-center text-xs font-semibold text-rose-700"
-                  >
-                    Payment history
-                  </Link>
-                </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </section>
       </main>
     </div>
