@@ -1,25 +1,11 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import LoadingSpinner from "../components/LoadingSpinner";
 import {
   AMENITY_OPTIONS,
   getAllHotels,
   searchHotelsByAmenity,
   searchHotelsByCity,
 } from "../services/hotelApi";
-
-const AMENITY_STYLES = {
-  WIFI: "bg-sky-100 text-sky-700 border-sky-200",
-  POOL: "bg-cyan-100 text-cyan-700 border-cyan-200",
-  PARKING: "bg-slate-100 text-slate-700 border-slate-200",
-  RESTAURANT: "bg-orange-100 text-orange-700 border-orange-200",
-  GYM: "bg-violet-100 text-violet-700 border-violet-200",
-  SPA: "bg-emerald-100 text-emerald-700 border-emerald-200",
-};
-
-function amenityClassName(amenity) {
-  return AMENITY_STYLES[amenity] ?? "bg-rose-100 text-rose-700 border-rose-200";
-}
 
 function resolveHotelId(hotel) {
   return hotel?.id || hotel?._id || "";
@@ -177,10 +163,7 @@ export default function HotelsPage() {
 
         <section className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {loading ? (
-            <LoadingSpinner
-              label="Loading hotels..."
-              className="sm:col-span-2 lg:col-span-3"
-            />
+            <p className="text-sm text-slate-500">Loading hotels...</p>
           ) : null}
 
           {!loading && hotels.length === 0 ? (
@@ -229,7 +212,7 @@ export default function HotelsPage() {
                       {(hotel.amenities ?? []).slice(0, 3).map((amenity) => (
                         <span
                           key={amenity}
-                          className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${amenityClassName(amenity)}`}
+                          className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700"
                         >
                           {amenity}
                         </span>
@@ -264,7 +247,7 @@ export default function HotelsPage() {
                       onClick={(event) => event.stopPropagation()}
                       className="mt-2 block rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700"
                     >
-                      Leave a review
+                      Payment history
                     </Link>
                   </div>
                 </div>

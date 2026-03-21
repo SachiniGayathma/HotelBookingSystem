@@ -108,4 +108,13 @@ public class BookingController {
             return ResponseEntity.internalServerError().body("Cancellation failed: " + e.getMessage());
         }
     }
+
+    // --- ADDED FOR ANALYTICS DASHBOARD ---
+    @GetMapping("/all")
+    @Operation(summary = "Get all bookings", description = "Retrieve all bookings for analytics")
+    @ApiResponse(responseCode = "200", description = "List of all bookings")
+    public ResponseEntity<java.util.List<Booking>> getAllBookings() {
+        java.util.List<Booking> bookings = bookingService.getAllBookings();
+        return ResponseEntity.ok(bookings);
+    }
 }

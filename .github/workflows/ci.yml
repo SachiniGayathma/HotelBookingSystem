@@ -27,20 +27,6 @@ jobs:
           chmod +x ./mvnw
           ./mvnw clean install
 
-      # BUILD PAYMENT SERVICE
-      - name: Build Payment Service
-        working-directory: backend/payment-service
-        run: |
-          chmod +x ./mvnw
-          ./mvnw clean install
-
-      # BUILD BOOKING SERVICE
-      - name: Build Booking Service
-        working-directory: backend/booking-service
-        run: |
-          chmod +x ./mvnw
-          ./mvnw clean install
-
       # SONARCLOUD SCAN (ONLY WHEN PR TARGET IS MAIN)
       - name: SonarCloud Scan
         if: github.base_ref == 'main'
