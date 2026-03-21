@@ -110,6 +110,12 @@ export default function HotelsPage() {
             >
               Support
             </a>
+            <Link
+              to="/admin/analytics"
+              className="rounded-full px-3 py-1 transition hover:bg-slate-100"
+            >
+              Analytics
+            </Link>
           </nav>
         </header>
 
