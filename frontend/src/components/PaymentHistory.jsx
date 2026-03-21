@@ -10,7 +10,7 @@ export default function PaymentHistory() {
     const fetchPayments = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:8080/api/payment/history/${userId}`
+          `https://payment-service-app.agreeableocean-2c4c42d0.southeastasia.azurecontainerapps.io/api/payment/history/${userId}`
         );
         setPayments(res.data);
       } catch (err) {
