@@ -1,10 +1,12 @@
-name: CTSE CI Pipeline
+name: Booking Service CI Pipeline
 
 on:
   pull_request:
     branches:
       - dev
       - main
+    paths:
+      - 'backend/booking-service/**'
 
 jobs:
   build:
@@ -20,9 +22,9 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
-      # BUILD HOTEL SERVICE
-      - name: Build Hotel Service
-        working-directory: backend/hotel-service
+      # BUILD BOOKING SERVICE
+      - name: Build Booking Service
+        working-directory: backend/booking-service
         run: |
           chmod +x ./mvnw
           ./mvnw clean install
@@ -30,7 +32,7 @@ jobs:
       # SONARCLOUD SCAN (ONLY WHEN PR TARGET IS MAIN)
       - name: SonarCloud Scan
         if: github.base_ref == 'main'
-        working-directory: backend/hotel-service
+        working-directory: backend/booking-service
         run: |
           chmod +x ./mvnw
           ./mvnw sonar:sonar -Dsonar.login=${{ secrets.SONAR_TOKEN }}
@@ -45,9 +47,9 @@ jobs:
       # BUILD DOCKER IMAGE
       - name: Build Docker Image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/hotel-service ./backend/hotel-service
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/booking-service ./backend/booking-service
 
       # PUSH IMAGE TO DOCKER HUB
       - name: Push Docker Image
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/hotel-service
+          docker push ${{ secrets.DOCKER_USERNAME }}/booking-service

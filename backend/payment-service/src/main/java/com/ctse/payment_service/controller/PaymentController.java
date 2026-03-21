@@ -1,4 +1,4 @@
-package com.ctse.payment_service;
+package com.ctse.payment_service.controller;
 
 import com.ctse.payment_service.model.Payment;
 import com.ctse.payment_service.repository.PaymentRepository;
