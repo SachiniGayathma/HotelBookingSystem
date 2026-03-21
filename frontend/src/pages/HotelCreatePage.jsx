@@ -25,16 +25,25 @@ export default function HotelCreatePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fff8f6] text-slate-900">
-      <main className="mx-auto max-w-4xl px-5 py-8 sm:px-8 sm:py-10">
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-slate-600">Hotel Admin</h1>
-          <Link
-            to="/admin/hotels"
-            className="text-sm font-semibold text-rose-600 hover:text-rose-700"
-          >
-            Back to Hotels
-          </Link>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ffe8df_0%,_#fff8f6_45%,_#fff_100%)] text-slate-900">
+      <main className="mx-auto max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
+        <div className="mb-6 rounded-2xl border border-rose-200/70 bg-white/90 px-5 py-4 shadow-sm backdrop-blur">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-rose-500">
+                Hotel Admin
+              </p>
+              <h1 className="mt-1 text-xl font-black text-slate-800">
+                Create Hotel
+              </h1>
+            </div>
+            <Link
+              to="/admin/hotels"
+              className="rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+            >
+              Back to Hotels
+            </Link>
+          </div>
         </div>
         <HotelForm
           title="Create New Hotel"
