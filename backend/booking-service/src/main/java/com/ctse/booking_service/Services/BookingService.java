@@ -28,19 +28,76 @@ public class BookingService {
     }
 
     // Check availability by calling hotel service
-    public Object checkAvailability(String hotelId, LocalDate checkIn, LocalDate checkOut, int guests) {
+    public boolean checkAvailability(String hotelId, String roomType, LocalDate checkIn, LocalDate checkOut, int guests) {
         // Validate dates
         if (checkIn.isBefore(LocalDate.now()) || checkOut.isBefore(checkIn)) {
             throw new IllegalArgumentException("Invalid dates");
         }
 
-        // Call hotel service for availability
-        String url = hotelServiceUrl + "/hotels/" + hotelId + "/availability?checkIn=" + checkIn + "&checkOut=" + checkOut + "&guests=" + guests;
+        if (guests <= 0 || guests > 6) {
+            throw new IllegalArgumentException("Guest count must be between 1 and 6");
+        }
+
+        // Call hotel service for availability by room type
+        String url = hotelServiceUrl + "/hotels/" + hotelId + "/availability?roomType=" + roomType;
         try {
-            return restTemplate.getForObject(url, Object.class); // Assuming hotel returns JSON with rooms and prices
+            Boolean availableAtHotel = restTemplate.getForObject(url, Boolean.class);
+            if (availableAtHotel == null) {
+                throw new RuntimeException("Hotel service returned empty availability response");
+            }
+            return availableAtHotel;
         } catch (Exception e) {
             throw new RuntimeException("Hotel service unavailable: " + e.getMessage());
         }
+    }
+
+    private double getRoomBasePrice(String roomType) {
+        switch (roomType) {
+            case "SINGLE":
+                return 50.0;
+            case "DOUBLE":
+                return 90.0;
+            case "SUITE":
+                return 180.0;
+            default:
+                return 100.0;
+        }
+    }
+
+    private double getMealPlanRate(String mealPlan) {
+        switch (mealPlan) {
+            case "BREAKFAST":
+                return 10.0;
+            case "HALF_BOARD":
+                return 20.0;
+            case "FULL_BOARD":
+                return 30.0;
+            default:
+                return 0.0;
+        }
+    }
+
+    private double calculateTotalPrice(Booking booking) {
+        int totalGuests = booking.getGuests();
+        int nights = dateDiffInDays(booking.getCheckIn(), booking.getCheckOut());
+        if (nights <= 0) {
+            throw new IllegalArgumentException("Check-out must be after check-in");
+        }
+
+        double basePrice = getRoomBasePrice(booking.getRoomType());
+        double roomTotal = basePrice * nights;
+        double mealRate = getMealPlanRate(booking.getMealPlan());
+        double mealTotal = mealRate * totalGuests * nights;
+
+        double subTotal = roomTotal + mealTotal;
+        double serviceFee = subTotal * 0.1; // 10%
+        double tax = (subTotal + serviceFee) * 0.12; // 12%
+
+        return Math.round((subTotal + serviceFee + tax) * 100.0) / 100.0;
+    }
+
+    private int dateDiffInDays(LocalDate start, LocalDate end) {
+        return (int) java.time.Duration.between(start.atStartOfDay(), end.atStartOfDay()).toDays();
     }
 
     public Booking createBooking(Booking booking) {
@@ -54,6 +111,15 @@ public class BookingService {
                 throw new IllegalArgumentException("Room already booked for these dates");
             }
         }
+
+        // Ensure availability is still true (avoid race conditions)
+        boolean available = checkAvailability(booking.getHotelId(), booking.getRoomType(), booking.getCheckIn(), booking.getCheckOut(), booking.getGuests());
+        if (!available) {
+            throw new IllegalStateException("Room not available when trying to book");
+        }
+
+        // Price calculation
+        booking.setTotalPrice(calculateTotalPrice(booking));
 
         // Set initial status
         booking.setStatus("PENDING");
@@ -70,7 +136,7 @@ public class BookingService {
 
             // Call payment service to initiate payment
             String paymentUrl = paymentServiceUrl + "/api/payment/create-session";
-            PaymentRequest paymentReq = new PaymentRequest(booking.getUserId(), (int)(booking.getTotalPrice() * 100)); // Convert to cents
+            PaymentRequest paymentReq = new PaymentRequest(booking.getUserId(), (int) (booking.getTotalPrice() * 100)); // Convert to cents
             PaymentResponse paymentResp = restTemplate.postForObject(paymentUrl, paymentReq, PaymentResponse.class);
 
             // Update booking with payment ID

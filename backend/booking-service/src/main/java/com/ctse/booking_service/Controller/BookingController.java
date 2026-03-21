@@ -40,13 +40,14 @@ public class BookingController {
     @ApiResponse(responseCode = "400", description = "Invalid dates or parameters")
     public ResponseEntity<?> checkAvailability(
             @Parameter(description = "Hotel ID") @RequestParam String hotelId,
+            @Parameter(description = "Room type") @RequestParam String roomType,
             @Parameter(description = "Check-in date (YYYY-MM-DD)") @RequestParam String checkIn,
             @Parameter(description = "Check-out date (YYYY-MM-DD)") @RequestParam String checkOut,
             @Parameter(description = "Number of guests") @RequestParam int guests) {
         try {
             LocalDate checkInDate = LocalDate.parse(checkIn);
             LocalDate checkOutDate = LocalDate.parse(checkOut);
-            Object availability = bookingService.checkAvailability(hotelId, checkInDate, checkOutDate, guests);
+            boolean availability = bookingService.checkAvailability(hotelId, roomType, checkInDate, checkOutDate, guests);
             return ResponseEntity.ok(availability);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());
