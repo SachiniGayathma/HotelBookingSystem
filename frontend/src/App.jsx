@@ -16,6 +16,7 @@ import HotelCreatePage from "./pages/HotelCreatePage";
 import HotelEditPage from "./pages/HotelEditPage";
 import HotelDetailsPage from "./pages/HotelDetailsPage";
 import CustomerHotelDetailsPage from "./pages/CustomerHotelDetailsPage";
+import BookingPage from "./pages/BookingPage";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/hotels" element={<HotelsPage />} />
         <Route path="/hotels/:id" element={<CustomerHotelDetailsPage />} />
+        <Route path="/booking/:hotelId" element={<BookingPage />} />
         <Route path="/admin/hotels" element={<AdminHotelsPage />} />
         <Route path="/admin/hotels/new" element={<HotelCreatePage />} />
         <Route path="/admin/hotels/:id" element={<HotelDetailsPage />} />

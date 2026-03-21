@@ -88,7 +88,7 @@ export default function CustomerHotelDetailsPage() {
             </Link>
             <div className="flex flex-wrap items-center gap-2">
               <Link
-                to="/pay"
+                to={`/booking/${id}`}
                 className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
               >
                 Book now
