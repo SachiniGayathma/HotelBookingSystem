@@ -85,15 +85,13 @@ public class BookingService {
         }
 
         double basePrice = getRoomBasePrice(booking.getRoomType());
-        double roomTotal = basePrice * nights;
+        double roomCharge = basePrice * nights;
         double mealRate = getMealPlanRate(booking.getMealPlan());
-        double mealTotal = mealRate * totalGuests * nights;
+        double mealCharge = mealRate * totalGuests * nights;
+        double serviceCharge = roomCharge * 0.1; // 10% of room charge
+        double taxCharge = roomCharge * 0.12; // 12% of room charge
 
-        double subTotal = roomTotal + mealTotal;
-        double serviceFee = subTotal * 0.1; // 10%
-        double tax = (subTotal + serviceFee) * 0.12; // 12%
-
-        return Math.round((subTotal + serviceFee + tax) * 100.0) / 100.0;
+        return Math.round((roomCharge + mealCharge + serviceCharge + taxCharge) * 100.0) / 100.0;
     }
 
     private int dateDiffInDays(LocalDate start, LocalDate end) {
@@ -103,14 +101,6 @@ public class BookingService {
     public Booking createBooking(Booking booking) {
         // Validate booking
         validateBooking(booking);
-
-        // Check for double booking (simple check: no overlapping bookings for same room)
-        List<Booking> existing = repository.findByRoomIdAndStatus(booking.getRoomId(), "CONFIRMED");
-        for (Booking b : existing) {
-            if (datesOverlap(b.getCheckIn(), b.getCheckOut(), booking.getCheckIn(), booking.getCheckOut())) {
-                throw new IllegalArgumentException("Room already booked for these dates");
-            }
-        }
 
         // Ensure availability is still true (avoid race conditions)
         boolean available = checkAvailability(booking.getHotelId(), booking.getRoomType(), booking.getCheckIn(), booking.getCheckOut(), booking.getGuests());
@@ -139,8 +129,18 @@ public class BookingService {
             PaymentRequest paymentReq = new PaymentRequest(booking.getUserId(), (int) (booking.getTotalPrice() * 100)); // Convert to cents
             PaymentResponse paymentResp = restTemplate.postForObject(paymentUrl, paymentReq, PaymentResponse.class);
 
+            if (paymentResp == null) {
+                throw new RuntimeException("Payment service returned empty response");
+            }
+
+            // Payment service currently returns only "url"; keep compatibility if "sessionId" is absent.
+            String externalPaymentRef = paymentResp.getSessionId();
+            if (externalPaymentRef == null || externalPaymentRef.isBlank()) {
+                externalPaymentRef = paymentResp.getUrl();
+            }
+
             // Update booking with payment ID
-            savedBooking.setPaymentId(paymentResp.getSessionId());
+            savedBooking.setPaymentId(externalPaymentRef);
             savedBooking.setStatus("CONFIRMED");
             savedBooking.setUpdatedAt(LocalDate.now());
             return repository.save(savedBooking);
@@ -150,6 +150,10 @@ public class BookingService {
             savedBooking.setStatus("CANCELLED");
             repository.save(savedBooking);
             throw new RuntimeException("Booking failed: " + e.getResponseBodyAsString());
+        } catch (Exception e) {
+            savedBooking.setStatus("CANCELLED");
+            repository.save(savedBooking);
+            throw new RuntimeException("Booking failed: " + e.getMessage());
         }
     }
 
@@ -187,8 +191,14 @@ public class BookingService {
         if (booking.getCheckIn().isBefore(LocalDate.now()) || booking.getCheckOut().isBefore(booking.getCheckIn())) {
             throw new IllegalArgumentException("Invalid check-in/check-out dates");
         }
-        if (booking.getTotalPrice() <= 0) {
-            throw new IllegalArgumentException("Invalid total price");
+        if (booking.getGuests() <= 0) {
+            throw new IllegalArgumentException("Invalid guest count");
+        }
+        if (booking.getHotelId() == null || booking.getHotelId().isBlank()) {
+            throw new IllegalArgumentException("Hotel ID is required");
+        }
+        if (booking.getRoomType() == null || booking.getRoomType().isBlank()) {
+            throw new IllegalArgumentException("Room type is required");
         }
     }
 

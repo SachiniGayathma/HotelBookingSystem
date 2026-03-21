@@ -16,6 +16,10 @@ const MEAL_PLANS = [
   { key: "FULL_BOARD", label: "Full-board", addPerNight: 30 },
 ];
 
+const SERVICE_RATE = 0.1;
+const TAX_RATE = 0.12;
+const HARDCODED_USER_ID = "user123";
+
 function dateDiffInDays(start, end) {
   const msPerDay = 24 * 60 * 60 * 1000;
   return Math.max(0, Math.round((end - start) / msPerDay));
@@ -52,13 +56,23 @@ export default function BookingPage() {
 
   const mealPlanObj = MEAL_PLANS.find((m) => m.key === mealPlan) || MEAL_PLANS[0];
 
-  const totalPrice = useMemo(() => {
+  const pricing = useMemo(() => {
     if (nights < 1 || basePrice <= 0) return 0;
-    const adultPrice = basePrice * nights;
-    const mealPrice = mealPlanObj.addPerNight * nights * totalGuests;
-    const kidExtra = 0; // 0-5 yrs free as requested
-    return adultPrice + mealPrice + kidExtra;
+    const roomCharge = basePrice * nights;
+    const mealCharge = mealPlanObj.addPerNight * nights * totalGuests;
+    const serviceCharge = roomCharge * SERVICE_RATE;
+    const taxCharge = roomCharge * TAX_RATE;
+    const total = roomCharge + mealCharge + serviceCharge + taxCharge;
+    return {
+      roomCharge,
+      mealCharge,
+      serviceCharge,
+      taxCharge,
+      total,
+    };
   }, [nights, basePrice, mealPlanObj, totalGuests]);
+
+  const totalPrice = pricing?.total || 0;
 
   useEffect(() => {
     const loadHotel = async () => {
@@ -129,10 +143,10 @@ export default function BookingPage() {
 
     const payload = {
       hotelId,
-      roomId: selectedRoom?.id || "",
+      roomId: selectedRoom?.id || `${hotelId}-${roomType}`,
       roomType,
       mealPlan,
-      userId: "user123",
+      userId: HARDCODED_USER_ID,
       guests: totalGuests,
       checkIn,
       checkOut,
@@ -145,7 +159,19 @@ export default function BookingPage() {
       if (result?.data?.id) {
         setBookingMessage(`Booking successful! ID: ${result.data.id}`);
         setTimeout(() => {
-          navigate(`/history/user123`);
+          const paymentRedirectUrl = result?.data?.paymentId;
+          if (typeof paymentRedirectUrl === "string" && paymentRedirectUrl.startsWith("http")) {
+            window.location.href = paymentRedirectUrl;
+            return;
+          }
+
+          navigate("/pay", {
+            state: {
+              amount: Math.round((result?.data?.totalPrice || totalPrice) * 100),
+              userId: HARDCODED_USER_ID,
+              bookingId: result.data.id,
+            },
+          });
         }, 1200);
       } else {
         setBookingMessage("Booking succeeded, but no ID returned.");
@@ -156,6 +182,16 @@ export default function BookingPage() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleClearSelection = () => {
+    setCheckIn("");
+    setCheckOut("");
+    setAvailabilityChecked(false);
+    setIsAvailable(false);
+    setAvailabilityMessage("");
+    setBookingMessage("");
+    setMealPlan("NONE");
   };
 
   return (
@@ -274,6 +310,7 @@ export default function BookingPage() {
                 type="date"
                 value={checkIn}
                 min={new Date().toISOString().split("T")[0]}
+                disabled={busy || isAvailable}
                 onChange={(e) => setCheckIn(e.target.value)}
                 className="w-full rounded-xl border border-slate-300 px-3 py-2"
               />
@@ -285,6 +322,7 @@ export default function BookingPage() {
                 type="date"
                 value={checkOut}
                 min={checkIn || new Date().toISOString().split("T")[0]}
+                disabled={busy || isAvailable}
                 onChange={(e) => setCheckOut(e.target.value)}
                 className="w-full rounded-xl border border-slate-300 px-3 py-2"
               />
@@ -360,17 +398,30 @@ export default function BookingPage() {
 
               <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
                 <p className="text-sm">Base room price: {basePrice.toFixed(2)} per night</p>
-                <p className="text-sm">Meal surcharge: {mealPlanObj.addPerNight.toFixed(2)} per person/night</p>
+                <p className="text-sm">Room charge: {pricing ? pricing.roomCharge.toFixed(2) : "0.00"} USD</p>
+                <p className="text-sm">Meal surcharge: {pricing ? pricing.mealCharge.toFixed(2) : "0.00"} USD</p>
+                <p className="text-sm">Service charge ({(SERVICE_RATE * 100).toFixed(0)}% of room): {pricing ? pricing.serviceCharge.toFixed(2) : "0.00"} USD</p>
+                <p className="text-sm">Tax ({(TAX_RATE * 100).toFixed(0)}% of room): {pricing ? pricing.taxCharge.toFixed(2) : "0.00"} USD</p>
                 <p className="text-lg font-bold mt-2">Total estimated: {totalPrice.toFixed(2)} USD</p>
               </div>
 
-              <button
-                onClick={handleBookNow}
-                disabled={busy}
-                className="mt-4 rounded-xl bg-slate-900 px-5 py-2 text-white hover:bg-slate-800"
-              >
-                {busy ? "Booking..." : "Book Now"}
-              </button>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  onClick={handleBookNow}
+                  disabled={busy}
+                  className="rounded-xl bg-slate-900 px-5 py-2 text-white hover:bg-slate-800"
+                >
+                  {busy ? "Booking..." : "Book Now"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearSelection}
+                  disabled={busy}
+                  className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-slate-700 hover:bg-slate-50"
+                >
+                  Clear
+                </button>
+              </div>
 
               {bookingMessage ? (
                 <p className="mt-3 rounded-md border border-slate-200 bg-white p-2 text-sm text-slate-700">

@@ -1,16 +1,19 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
+import { useLocation } from "react-router-dom";
 
 export default function PayButton() {
+  const location = useLocation();
+  const autoTriggered = useRef(false);
   const [loading, setLoading] = useState(false);
-  const [amount, setAmount] = useState(5000);
-  const [userId, setUserId] = useState("user123"); // Example user ID
+  const [amount, setAmount] = useState(Number(location.state?.amount) || 5000);
+  const [userId, setUserId] = useState(location.state?.userId || "user123");
 
   const handlePayment = async () => {
     try {
       setLoading(true);
       const response = await axios.post(
-        "http://localhost:8080/api/payment/create-session",
+        "/api/payment/create-session",
         { amount, userId } // send userId to backend
       );
       window.location.href = response.data.url;
@@ -21,6 +24,17 @@ export default function PayButton() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (autoTriggered.current) {
+      return;
+    }
+
+    if (location.state?.amount && location.state?.userId) {
+      autoTriggered.current = true;
+      handlePayment();
+    }
+  }, [location.state]);
 
   return (
     <div>
