@@ -134,8 +134,8 @@ public class HotelService {
         return hotelRepository.save(hotel);
     }
 
-    // CHECK ROOM AVAILABILITY
-    public boolean checkAvailability(String hotelId, String roomType) {
+    // CHECK ROOM AVAILABILITY COUNT
+    public int checkAvailability(String hotelId, String roomType) {
         Hotel hotel = getHotelById(hotelId);
 
         if (roomType == null || roomType.isBlank()) {
@@ -143,12 +143,13 @@ public class HotelService {
         }
 
         if (hotel.getRooms() == null) {
-            return false;
+            return 0;
         }
 
         return hotel.getRooms().stream()
                 .filter(room -> room.getRoomType().name().equalsIgnoreCase(roomType))
-                .anyMatch(room -> room.getAvailableRooms() > 0);
+                .mapToInt(Room::getAvailableRooms)
+                .sum();
     }
 
     // RESERVE ROOM
