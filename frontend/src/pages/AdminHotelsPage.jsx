@@ -209,7 +209,7 @@ export default function AdminHotelsPage() {
 
           {!loading && hotels.length === 0 ? (
             <p className="text-sm text-slate-500">
-              No hotels found for the current query.
+              No hotels found.
             </p>
           ) : null}
 
