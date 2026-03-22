@@ -62,9 +62,6 @@ const stays = [
 ];
 
 const quickActions = [
-  { label: "Book & Pay", to: "/pay" },
-  { label: "Payment Ledger", to: "/all-payments" },
-  { label: "Guest Payment History", to: "/history/user123" },
 ];
 
 export default function HomePage() {

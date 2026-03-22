@@ -26,6 +26,10 @@ function dateDiffInDays(start, end) {
   return Math.max(0, Math.round((end - start) / msPerDay));
 }
 
+function formatDateInput(date) {
+  return date.toISOString().split("T")[0];
+}
+
 export default function BookingPage() {
   const { hotelId } = useParams();
 
@@ -48,6 +52,12 @@ export default function BookingPage() {
   const totalGuests = adults + kids;
   const selectedRoom = hotel?.rooms?.find((r) => r.roomType === roomType);
   const basePrice = selectedRoom?.pricePerNight || 0;
+  const todayDateStr = formatDateInput(new Date());
+  const maxSelectableDate = useMemo(() => {
+    const maxDate = new Date();
+    maxDate.setFullYear(maxDate.getFullYear() + 1);
+    return formatDateInput(maxDate);
+  }, []);
 
   const nights = useMemo(() => {
     if (!checkIn || !checkOut) return 0;
@@ -99,6 +109,20 @@ export default function BookingPage() {
 
     if (new Date(checkOut) <= new Date(checkIn)) {
       setAvailabilityMessage("Check-out date must be after check-in date.");
+      setIsAvailable(false);
+      setAvailabilityChecked(true);
+      return;
+    }
+
+    if (checkIn < todayDateStr || checkIn > maxSelectableDate) {
+      setAvailabilityMessage("Check-in date must be between today and 1 year from today.");
+      setIsAvailable(false);
+      setAvailabilityChecked(true);
+      return;
+    }
+
+    if (checkOut < todayDateStr || checkOut > maxSelectableDate) {
+      setAvailabilityMessage("Check-out date must be between today and 1 year from today.");
       setIsAvailable(false);
       setAvailabilityChecked(true);
       return;
@@ -281,6 +305,7 @@ export default function BookingPage() {
               <select
                 value={roomType}
                 onChange={(e) => setRoomType(e.target.value)}
+                disabled={busy || isAvailable}
                 className="w-full rounded-xl border border-slate-300 px-3 py-2"
               >
                 {ROOM_TYPES.map((type) => (
@@ -351,9 +376,29 @@ export default function BookingPage() {
               <input
                 type="date"
                 value={checkIn}
-                min={new Date().toISOString().split("T")[0]}
+                min={todayDateStr}
+                max={maxSelectableDate}
                 disabled={busy || isAvailable}
-                onChange={(e) => setCheckIn(e.target.value)}
+                onChange={(e) => {
+                  const nextCheckIn = e.target.value;
+                  if (!nextCheckIn) {
+                    setCheckIn("");
+                    setCheckOut("");
+                    return;
+                  }
+
+                  if (nextCheckIn < todayDateStr || nextCheckIn > maxSelectableDate) {
+                    setAvailabilityMessage("Check-in date must be between today and 1 year from today.");
+                    setIsAvailable(false);
+                    setAvailabilityChecked(true);
+                    return;
+                  }
+
+                  setCheckIn(nextCheckIn);
+                  if (checkOut && checkOut <= nextCheckIn) {
+                    setCheckOut("");
+                  }
+                }}
                 className="w-full rounded-xl border border-slate-300 px-3 py-2"
               />
             </div>
@@ -363,9 +408,26 @@ export default function BookingPage() {
               <input
                 type="date"
                 value={checkOut}
-                min={checkIn || new Date().toISOString().split("T")[0]}
+                min={checkIn || todayDateStr}
+                max={maxSelectableDate}
                 disabled={busy || isAvailable}
-                onChange={(e) => setCheckOut(e.target.value)}
+                onChange={(e) => {
+                  const nextCheckOut = e.target.value;
+                  if (!nextCheckOut) {
+                    setCheckOut("");
+                    return;
+                  }
+
+                  const checkoutMin = checkIn || todayDateStr;
+                  if (nextCheckOut < checkoutMin || nextCheckOut > maxSelectableDate) {
+                    setAvailabilityMessage("Check-out date must be after check-in and within 1 year from today.");
+                    setIsAvailable(false);
+                    setAvailabilityChecked(true);
+                    return;
+                  }
+
+                  setCheckOut(nextCheckOut);
+                }}
                 className="w-full rounded-xl border border-slate-300 px-3 py-2"
               />
             </div>

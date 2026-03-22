@@ -7,10 +7,13 @@ export default function Success() {
   const emailSent = useRef(false);
 
   const sendReceiptIfAvailable = async (finalBookingId = null) => {
+    // 1. Lock the email immediately to prevent duplicate sends on React rerenders.
     if (emailSent.current) return;
-
     const bookingDataStr = localStorage.getItem("recentBooking");
     if (!bookingDataStr) return;
+
+    emailSent.current = true;
+    localStorage.removeItem("recentBooking");
 
     try {
       const bookingData = JSON.parse(bookingDataStr);
@@ -26,8 +29,6 @@ export default function Success() {
         "VRwWuvzY3ns5B0bfM",
       );
 
-      emailSent.current = true;
-      localStorage.removeItem("recentBooking");
       console.log("Digital receipt sent successfully");
     } catch (err) {
       console.error("Digital receipt failed:", err);
@@ -44,6 +45,8 @@ export default function Success() {
         return;
       }
 
+      let completedBookingId = null;
+
       try {
         const pendingBooking = JSON.parse(raw);
 
@@ -52,14 +55,16 @@ export default function Success() {
           status: "COMPLETED",
         });
 
-        const completedBookingId = response?.data?.id || null;
+        completedBookingId = response?.data?.id || null;
         localStorage.removeItem("pendingBookingAfterPayment");
-        await sendReceiptIfAvailable(completedBookingId);
         setMessage("Payment and booking completed successfully.");
       } catch (error) {
         setMessage(
           `Payment succeeded, but booking finalization failed: ${error?.response?.data || error.message}`,
         );
+      } finally {
+        // 2. Always attempt receipt sending even if booking finalization fails.
+        await sendReceiptIfAvailable(completedBookingId);
       }
     };
 
