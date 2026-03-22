@@ -1,4 +1,37 @@
+import { useEffect, useState } from "react";
+import { completeBookingAfterPayment } from "../services/bookingApi";
+
 export default function Success() {
+  const [message, setMessage] = useState("Finalizing your booking...");
+
+  useEffect(() => {
+    const finalize = async () => {
+      const raw = localStorage.getItem("pendingBookingAfterPayment");
+
+      if (!raw) {
+        setMessage("Your payment has been processed successfully.");
+        return;
+      }
+
+      try {
+        const pendingBooking = JSON.parse(raw);
+
+        await completeBookingAfterPayment({
+          ...pendingBooking,
+          status: "COMPLETED",
+        });
+        localStorage.removeItem("pendingBookingAfterPayment");
+        setMessage("Payment and booking completed successfully.");
+      } catch (error) {
+        setMessage(
+          `Payment succeeded, but booking finalization failed: ${error?.response?.data || error.message}`,
+        );
+      }
+    };
+
+    finalize();
+  }, []);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-green-100 px-4">
       
@@ -27,7 +60,7 @@ export default function Success() {
 
         {/* Subtitle */}
         <p className="text-gray-500 text-sm mb-6">
-          Your payment has been processed successfully.
+          {message}
         </p>
 
         {/* Button */}

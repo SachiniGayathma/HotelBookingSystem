@@ -11,3 +11,11 @@ export function checkBookingAvailability(hotelId, roomType, checkIn, checkOut, g
 export function createBooking(data) {
   return axios.post(BOOKING_API_BASE_URL, data);
 }
+
+export function getBookingQuote(data) {
+  return axios.post(`${BOOKING_API_BASE_URL}/quote`, data);
+}
+
+export function completeBookingAfterPayment(data) {
+  return axios.post(`${BOOKING_API_BASE_URL}/complete-after-payment`, data);
+}
