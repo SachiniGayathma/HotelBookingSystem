@@ -1,5 +1,5 @@
-# Use OpenJDK 17 as base image
-FROM openjdk:17-jdk-slim
+# Use Eclipse Temurin 17 JDK as base image
+FROM eclipse-temurin:17-jdk-slim
 
 # Set working directory
 WORKDIR /app
@@ -9,6 +9,8 @@ COPY mvnw .
 COPY mvnw.cmd .
 COPY .mvn .mvn
 COPY pom.xml .
+
+RUN chmod +x mvnw
 
 # Download dependencies (for faster builds)
 RUN ./mvnw dependency:go-offline
