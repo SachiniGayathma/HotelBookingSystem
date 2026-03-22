@@ -232,16 +232,22 @@ export default function CustomerHotelDetailsPage() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-rose-700">
                   {hotel.hotelCode || "Hotel"}
                 </p>
-                <h1 className="mt-2 text-3xl font-black sm:text-4xl">
-                  {hotel.name}
+                <h1 className="mt-2 text-3xl font-black sm:text-4xl flex items-center justify-between gap-4">
+                  <span>{hotel.name}</span>
+                  
                   {/* --- REVIEWS ADDITION START --- */}
-  {avgRating > 0 && (
-    <span className="text-lg font-bold text-amber-500 bg-amber-50 px-3 py-1 rounded-full border border-amber-100">
-      ⭐ {avgRating}
-    </span>
-  )}
-  {/* --- REVIEWS ADDITION END --- */}
+                  {avgRating > 0 && (
+                    <span className="flex items-center gap-1.5 text-lg font-bold text-amber-600 bg-amber-50 px-4 py-1.5 rounded-full border border-amber-200 shadow-sm">
+                      {/* Razor-sharp SVG Star instead of emoji */}
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-amber-500">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                      {avgRating}
+                    </span>
+                  )}
+                  {/* --- REVIEWS ADDITION END --- */}
                 </h1>
+                
                 <p className="mt-2 text-sm text-slate-600">
                   {hotel.city} - {hotel.address}
                 </p>
