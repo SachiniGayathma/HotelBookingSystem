@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
+import LoadingSpinner from "../components/LoadingSpinner";
 import {
   ROOM_TYPE_OPTIONS,
   addRoomToHotel,
@@ -7,6 +8,19 @@ import {
   getHotelById,
   reserveRoom,
 } from "../services/hotelApi";
+
+const AMENITY_STYLES = {
+  WIFI: "bg-sky-100 text-sky-700 border-sky-200",
+  POOL: "bg-cyan-100 text-cyan-700 border-cyan-200",
+  PARKING: "bg-slate-100 text-slate-700 border-slate-200",
+  RESTAURANT: "bg-orange-100 text-orange-700 border-orange-200",
+  GYM: "bg-violet-100 text-violet-700 border-violet-200",
+  SPA: "bg-emerald-100 text-emerald-700 border-emerald-200",
+};
+
+function amenityClassName(amenity) {
+  return AMENITY_STYLES[amenity] ?? "bg-rose-100 text-rose-700 border-rose-200";
+}
 
 function roomBadge(availableRooms) {
   if (availableRooms > 5) {
@@ -67,7 +81,7 @@ export default function HotelDetailsPage() {
 
     try {
       await addRoomToHotel(id, payload);
-      setRoomActionMessage("Room type added successfully.");
+      setRoomActionMessage("Room type saved successfully (added or updated).");
       setPricePerNight("");
       setTotalRooms("");
       setAvailableRooms("");
@@ -83,9 +97,10 @@ export default function HotelDetailsPage() {
     try {
       setRoomActionError("");
       const response = await checkRoomAvailability(id, roomType);
+      const availableCount = Number(response?.data?.availableRooms ?? 0);
       setRoomActionMessage(
-        response.data
-          ? `${roomType} rooms are available.`
+        availableCount > 0
+          ? `${availableCount} ${roomType} room(s) available.`
           : `${roomType} rooms are currently unavailable.`,
       );
     } catch (requestError) {
@@ -110,29 +125,27 @@ export default function HotelDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fff8f6] text-slate-900">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ffe7dd_0%,_#fff8f6_45%,_#fff_100%)] text-slate-900">
       <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-10">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-rose-200/70 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
           <h1 className="text-2xl font-black">Hotel Details</h1>
           <div className="flex flex-wrap gap-2">
             <Link
               to="/admin/hotels"
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
               Back to Hotels
             </Link>
             <Link
               to={`/admin/hotels/${id}/edit`}
-              className="rounded-lg bg-rose-500 px-3 py-2 text-sm font-semibold text-white"
+              className="rounded-lg bg-rose-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rose-600"
             >
               Edit Hotel
             </Link>
           </div>
         </div>
 
-        {loading ? (
-          <p className="text-sm text-slate-500">Loading details...</p>
-        ) : null}
+        {loading ? <LoadingSpinner label="Loading hotel details..." /> : null}
 
         {!loading && error ? (
           <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -164,7 +177,7 @@ export default function HotelDetailsPage() {
                 {(hotel.amenities ?? []).map((amenity) => (
                   <span
                     key={amenity}
-                    className="rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700"
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${amenityClassName(amenity)}`}
                   >
                     {amenity}
                   </span>

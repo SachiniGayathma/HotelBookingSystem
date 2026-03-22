@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import axios from "axios";
 import { getHotelById } from "../services/hotelApi";
-import { checkBookingAvailability, createBooking } from "../services/bookingApi";
+import { checkBookingAvailability, getBookingQuote } from "../services/bookingApi";
 
 const ROOM_TYPES = [
   { key: "SINGLE", label: "Single", max: 1 },
-  { key: "DOUBLE", label: "Double", max: 3 },
+  { key: "DOUBLE", label: "Double", max: 2 },
   { key: "SUITE", label: "Suite", max: 6 },
 ];
 
@@ -27,7 +28,6 @@ function dateDiffInDays(start, end) {
 
 export default function BookingPage() {
   const { hotelId } = useParams();
-  const navigate = useNavigate();
 
   const [hotel, setHotel] = useState(null);
   const [checkIn, setCheckIn] = useState("");
@@ -43,6 +43,8 @@ export default function BookingPage() {
   const [bookingMessage, setBookingMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const selectedRoomType = ROOM_TYPES.find((r) => r.key === roomType) || ROOM_TYPES[1];
+  const maxGuestsForSelectedRoom = selectedRoomType.max;
   const totalGuests = adults + kids;
   const selectedRoom = hotel?.rooms?.find((r) => r.roomType === roomType);
   const basePrice = selectedRoom?.pricePerNight || 0;
@@ -102,9 +104,8 @@ export default function BookingPage() {
       return;
     }
 
-    const roomTypeConfig = ROOM_TYPES.find((r) => r.key === roomType);
-    if (totalGuests > roomTypeConfig.max) {
-      setAvailabilityMessage(`Selected room type supports up to ${roomTypeConfig.max} guests.`);
+    if (totalGuests > maxGuestsForSelectedRoom) {
+      setAvailabilityMessage(`Selected room type supports up to ${maxGuestsForSelectedRoom} guests.`);
       setIsAvailable(false);
       setAvailabilityChecked(true);
       return;
@@ -113,7 +114,26 @@ export default function BookingPage() {
     setBusy(true);
     try {
       const response = await checkBookingAvailability(hotelId, roomType, checkIn, checkOut, totalGuests);
-      const available = response.data === true;
+      const rawAvailability = response?.data;
+      let availableRooms = 0;
+
+      if (typeof rawAvailability === "number") {
+        availableRooms = rawAvailability;
+      } else if (typeof rawAvailability === "boolean") {
+        availableRooms = rawAvailability ? 1 : 0;
+      } else if (typeof rawAvailability === "string") {
+        const parsed = Number(rawAvailability);
+        if (Number.isFinite(parsed)) {
+          availableRooms = parsed;
+        } else {
+          availableRooms = rawAvailability.toLowerCase() === "true" ? 1 : 0;
+        }
+      } else if (rawAvailability && typeof rawAvailability === "object") {
+        const count = Number(rawAvailability.availableRooms);
+        availableRooms = Number.isFinite(count) ? count : 0;
+      }
+
+      const available = availableRooms > 0;
       setIsAvailable(available);
       setAvailabilityChecked(true);
 
@@ -150,47 +170,55 @@ export default function BookingPage() {
       guests: totalGuests,
       checkIn,
       checkOut,
-      totalPrice,
       status: "PENDING",
     };
 
     try {
-      const result = await createBooking(payload);
-      if (result?.data?.id) {
-        setBookingMessage(`Booking successful! ID: ${result.data.id}`);
-        
-        /* --- EMAIL RECEIPT BRIDGE START --- */
-        // Save booking details to browser memory so the Success page 
-        // can trigger the email after the Stripe redirect.
-        localStorage.setItem("recentBooking", JSON.stringify({
-          booking_id: result.data.id,
+      const quoteResponse = await getBookingQuote(payload);
+      const quotedTotalUsd = Number(quoteResponse?.data?.totalPriceUsd ?? quoteResponse?.data?.totalPrice ?? 0);
+      const amountCents = Number(quoteResponse?.data?.paymentAmountMinorUnits ?? quoteResponse?.data?.amountCents ?? 0);
+
+      if (!(quotedTotalUsd > 0) || !(amountCents > 0)) {
+        setBookingMessage("Could not calculate booking total. Please try again.");
+        return;
+      }
+
+      const paymentResponse = await axios.post("/api/payment/create-session", {
+        amount: amountCents,
+        userId: HARDCODED_USER_ID,
+      });
+
+      const paymentUrl = paymentResponse?.data?.url;
+      const sessionId = paymentResponse?.data?.sessionId;
+
+      if (!(typeof paymentUrl === "string" && paymentUrl.startsWith("http"))) {
+        setBookingMessage("Payment session creation failed. Please try again.");
+        return;
+      }
+
+      const pendingBooking = {
+        ...payload,
+        totalPrice: quotedTotalUsd,
+        paymentId: (typeof sessionId === "string" && sessionId.trim()) || paymentUrl,
+      };
+      localStorage.setItem("pendingBookingAfterPayment", JSON.stringify(pendingBooking));
+
+      // Save details for the Success page to trigger email receipt after Stripe redirect.
+      localStorage.setItem(
+        "recentBooking",
+        JSON.stringify({
+          booking_id: pendingBooking.bookingId || null,
           hotel_name: hotel?.name || "StayEase Hotel",
           check_in: checkIn,
           check_out: checkOut,
           room_type: roomType,
-          total_price: totalPrice,
-          user_email: "rocky1204r@gmail.com" 
-        }));
-        /* --- EMAIL RECEIPT BRIDGE END --- */
+          total_price: quotedTotalUsd,
+          user_email: "rocky1204r@gmail.com",
+        }),
+      );
 
-        setTimeout(() => {
-          const paymentRedirectUrl = result?.data?.paymentId;
-          if (typeof paymentRedirectUrl === "string" && paymentRedirectUrl.startsWith("http")) {
-            window.location.href = paymentRedirectUrl;
-            return;
-          }
-
-          navigate("/pay", {
-            state: {
-              amount: Math.round((result?.data?.totalPrice || totalPrice) * 100),
-              userId: HARDCODED_USER_ID,
-              bookingId: result.data.id,
-            },
-          });
-        }, 1200);
-      } else {
-        setBookingMessage("Booking succeeded, but no ID returned.");
-      }
+      setBookingMessage("Redirecting to payment...");
+      window.location.href = paymentUrl;
     } catch (error) {
       setBookingMessage(`Booking failed: ${error?.response?.data || error.message}`);
       console.error(error);
@@ -246,7 +274,6 @@ export default function BookingPage() {
 
         <section className="mt-6 rounded-3xl border border-rose-100 bg-white p-6 shadow-sm sm:p-8">
           <h1 className="text-2xl font-black">Booking</h1>
-          <p className="mt-1 text-sm text-slate-500">Hotel ID: {hotelId}</p>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
@@ -278,8 +305,8 @@ export default function BookingPage() {
                 <span className="w-8 text-center">{adults}</span>
                 <button
                   type="button"
-                  disabled={adults + kids >= 6}
-                  onClick={() => setAdults((value) => Math.min(6 - kids, value + 1))}
+                  disabled={adults + kids >= maxGuestsForSelectedRoom}
+                  onClick={() => setAdults((value) => Math.min(maxGuestsForSelectedRoom - kids, value + 1))}
                   className="rounded-lg border px-3 py-1"
                 >
                   +
@@ -301,8 +328,8 @@ export default function BookingPage() {
                 <span className="w-8 text-center">{kids}</span>
                 <button
                   type="button"
-                  disabled={adults + kids >= 6}
-                  onClick={() => setKids((value) => Math.min(6 - adults, value + 1))}
+                  disabled={adults + kids >= maxGuestsForSelectedRoom}
+                  onClick={() => setKids((value) => Math.min(maxGuestsForSelectedRoom - adults, value + 1))}
                   className="rounded-lg border px-3 py-1"
                 >
                   +

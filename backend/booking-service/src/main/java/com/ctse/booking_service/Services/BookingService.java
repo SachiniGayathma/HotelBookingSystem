@@ -9,6 +9,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,8 +28,9 @@ public class BookingService {
         this.repository = repository;
     }
 
-    // Check availability by calling hotel service
-    public boolean checkAvailability(String hotelId, String roomType, LocalDate checkIn, LocalDate checkOut, int guests) {
+    // Check availability by calling hotel service.
+    // Hotel service may return either a room count (int) or a boolean.
+    public int checkAvailability(String hotelId, String roomType, LocalDate checkIn, LocalDate checkOut, int guests) {
         // Validate dates
         if (checkIn.isBefore(LocalDate.now()) || checkOut.isBefore(checkIn)) {
             throw new IllegalArgumentException("Invalid dates");
@@ -41,26 +43,83 @@ public class BookingService {
         // Call hotel service for availability by room type
         String url = hotelServiceUrl + "/hotels/" + hotelId + "/availability?roomType=" + roomType;
         try {
-            Boolean availableAtHotel = restTemplate.getForObject(url, Boolean.class);
-            if (availableAtHotel == null) {
+            Object availabilityResponse = restTemplate.getForObject(url, Object.class);
+            if (availabilityResponse == null) {
                 throw new RuntimeException("Hotel service returned empty availability response");
             }
-            return availableAtHotel;
+
+            if (availabilityResponse instanceof Number) {
+                return Math.max(0, ((Number) availabilityResponse).intValue());
+            }
+
+            if (availabilityResponse instanceof Boolean) {
+                return ((Boolean) availabilityResponse) ? 1 : 0;
+            }
+
+            if (availabilityResponse instanceof String) {
+                String value = ((String) availabilityResponse).trim();
+                if ("true".equalsIgnoreCase(value)) {
+                    return 1;
+                }
+                if ("false".equalsIgnoreCase(value)) {
+                    return 0;
+                }
+                return Math.max(0, Integer.parseInt(value));
+            }
+
+            if (availabilityResponse instanceof Map<?, ?>) {
+                Object availableRooms = ((Map<?, ?>) availabilityResponse).get("availableRooms");
+                if (availableRooms instanceof Number) {
+                    return Math.max(0, ((Number) availableRooms).intValue());
+                }
+                if (availableRooms instanceof String) {
+                    return Math.max(0, Integer.parseInt(((String) availableRooms).trim()));
+                }
+                throw new RuntimeException("Hotel availability payload missing numeric availableRooms field");
+            }
+
+            throw new RuntimeException("Unsupported availability response type: " + availabilityResponse.getClass().getSimpleName());
         } catch (Exception e) {
             throw new RuntimeException("Hotel service unavailable: " + e.getMessage());
         }
     }
 
-    private double getRoomBasePrice(String roomType) {
-        switch (roomType) {
-            case "SINGLE":
-                return 50.0;
-            case "DOUBLE":
-                return 90.0;
-            case "SUITE":
-                return 180.0;
-            default:
-                return 100.0;
+    private double getRoomBasePrice(String hotelId, String roomType) {
+        String url = hotelServiceUrl + "/hotels/" + hotelId;
+        try {
+            Object hotelResponse = restTemplate.getForObject(url, Object.class);
+            if (!(hotelResponse instanceof Map<?, ?>)) {
+                throw new RuntimeException("Invalid hotel response payload");
+            }
+
+            Object roomsObject = ((Map<?, ?>) hotelResponse).get("rooms");
+            if (!(roomsObject instanceof List<?>)) {
+                throw new RuntimeException("Hotel response missing rooms data");
+            }
+
+            for (Object roomObj : (List<?>) roomsObject) {
+                if (!(roomObj instanceof Map<?, ?>)) {
+                    continue;
+                }
+                Map<?, ?> room = (Map<?, ?>) roomObj;
+                String type = String.valueOf(room.get("roomType"));
+                if (!roomType.equalsIgnoreCase(type)) {
+                    continue;
+                }
+
+                Object priceObject = room.get("pricePerNight");
+                if (priceObject instanceof Number) {
+                    return ((Number) priceObject).doubleValue();
+                }
+                if (priceObject instanceof String) {
+                    return Double.parseDouble(((String) priceObject).trim());
+                }
+                throw new RuntimeException("Room price is missing for room type " + roomType);
+            }
+
+            throw new RuntimeException("Room type not found in hotel: " + roomType);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load room pricing from hotel service: " + e.getMessage());
         }
     }
 
@@ -84,7 +143,7 @@ public class BookingService {
             throw new IllegalArgumentException("Check-out must be after check-in");
         }
 
-        double basePrice = getRoomBasePrice(booking.getRoomType());
+        double basePrice = getRoomBasePrice(booking.getHotelId(), booking.getRoomType());
         double roomCharge = basePrice * nights;
         double mealRate = getMealPlanRate(booking.getMealPlan());
         double mealCharge = mealRate * totalGuests * nights;
@@ -103,8 +162,8 @@ public class BookingService {
         validateBooking(booking);
 
         // Ensure availability is still true (avoid race conditions)
-        boolean available = checkAvailability(booking.getHotelId(), booking.getRoomType(), booking.getCheckIn(), booking.getCheckOut(), booking.getGuests());
-        if (!available) {
+        int availableRooms = checkAvailability(booking.getHotelId(), booking.getRoomType(), booking.getCheckIn(), booking.getCheckOut(), booking.getGuests());
+        if (availableRooms <= 0) {
             throw new IllegalStateException("Room not available when trying to book");
         }
 
@@ -167,6 +226,36 @@ public class BookingService {
             repository.save(savedBooking);
             throw new RuntimeException("Booking failed: " + e.getMessage());
         }
+    }
+
+    public PriceQuote quoteBooking(Booking booking) {
+        validateBooking(booking);
+        double totalPriceUsd = calculateTotalPrice(booking);
+        long paymentAmountMinorUnits = Math.max(50L, Math.round(totalPriceUsd * 100.0));
+        return new PriceQuote(totalPriceUsd, paymentAmountMinorUnits, "usd");
+    }
+
+    public Booking completeBookingAfterPayment(Booking booking) {
+        validateBooking(booking);
+
+        int availableRooms = checkAvailability(booking.getHotelId(), booking.getRoomType(), booking.getCheckIn(), booking.getCheckOut(), booking.getGuests());
+        if (availableRooms <= 0) {
+            throw new IllegalStateException("Room not available when trying to finalize booking");
+        }
+
+        if (booking.getPaymentId() == null || booking.getPaymentId().isBlank()) {
+            throw new IllegalArgumentException("Payment reference is required to complete booking");
+        }
+
+        String reserveUrl = hotelServiceUrl + "/hotels/" + booking.getHotelId() + "/reserve?roomType=" + booking.getRoomType();
+        restTemplate.put(reserveUrl, null);
+
+        booking.setTotalPrice(calculateTotalPrice(booking));
+        booking.setStatus("COMPLETED");
+        booking.setCreatedAt(LocalDate.now());
+        booking.setUpdatedAt(LocalDate.now());
+
+        return repository.save(booking);
     }
 
     // --- ADDED FOR ANALYTICS DASHBOARD ---
@@ -247,5 +336,39 @@ public class BookingService {
         public void setSessionId(String sessionId) { this.sessionId = sessionId; }
         public String getUrl() { return url; }
         public void setUrl(String url) { this.url = url; }
+    }
+
+    public static class PriceQuote {
+        private final double totalPriceUsd;
+        private final long paymentAmountMinorUnits;
+        private final String paymentCurrency;
+
+        public PriceQuote(double totalPriceUsd, long paymentAmountMinorUnits, String paymentCurrency) {
+            this.totalPriceUsd = totalPriceUsd;
+            this.paymentAmountMinorUnits = paymentAmountMinorUnits;
+            this.paymentCurrency = paymentCurrency;
+        }
+
+        // Backward-compatible field name for existing frontend code paths.
+        public double getTotalPrice() {
+            return totalPriceUsd;
+        }
+
+        // Backward-compatible field name for existing frontend code paths.
+        public long getAmountCents() {
+            return paymentAmountMinorUnits;
+        }
+
+        public double getTotalPriceUsd() {
+            return totalPriceUsd;
+        }
+
+        public long getPaymentAmountMinorUnits() {
+            return paymentAmountMinorUnits;
+        }
+
+        public String getPaymentCurrency() {
+            return paymentCurrency;
+        }
     }
 }

@@ -63,7 +63,7 @@ public class AnalyticsController {
                     dateStr = ((String) createdAtObj).substring(0, 10);
                 }
                 
-                if ("CONFIRMED".equals(status)) {
+                if ("CONFIRMED".equals(status) || "COMPLETED".equals(status)) {
                     double price = b.get("totalPrice") != null ? Double.parseDouble(b.get("totalPrice").toString()) : 0.0;
                     totalRevenue += price;
 

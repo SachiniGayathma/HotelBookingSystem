@@ -111,6 +111,12 @@ export default function HotelsPage() {
               Support
             </a>
             <Link
+              to="/history/user123"
+              className="rounded-full px-3 py-1 transition hover:bg-slate-100"
+            >
+              View My Payments
+            </Link>
+            <Link
               to="/admin/analytics"
               className="rounded-full px-3 py-1 transition hover:bg-slate-100"
             >

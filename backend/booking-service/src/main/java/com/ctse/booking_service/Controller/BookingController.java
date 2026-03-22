@@ -47,8 +47,8 @@ public class BookingController {
         try {
             LocalDate checkInDate = LocalDate.parse(checkIn);
             LocalDate checkOutDate = LocalDate.parse(checkOut);
-            boolean availability = bookingService.checkAvailability(hotelId, roomType, checkInDate, checkOutDate, guests);
-            return ResponseEntity.ok(availability);
+            int availableRooms = bookingService.checkAvailability(hotelId, roomType, checkInDate, checkOutDate, guests);
+            return ResponseEntity.ok(availableRooms);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         }
@@ -67,6 +67,32 @@ public class BookingController {
             return ResponseEntity.badRequest().body("Validation error: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Booking failed: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/quote")
+    @Operation(summary = "Get booking quote", description = "Calculate total price and payment amount for a booking request")
+    public ResponseEntity<?> quoteBooking(@RequestBody Booking booking) {
+        try {
+            BookingService.PriceQuote quote = bookingService.quoteBooking(booking);
+            return ResponseEntity.ok(quote);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Validation error: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Quote failed: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/complete-after-payment")
+    @Operation(summary = "Complete booking after successful payment", description = "Reserves room and persists booking only after payment success")
+    public ResponseEntity<?> completeAfterPayment(@RequestBody Booking booking) {
+        try {
+            Booking completed = bookingService.completeBookingAfterPayment(booking);
+            return ResponseEntity.ok(completed);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Validation error: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Completion failed: " + e.getMessage());
         }
     }
 
