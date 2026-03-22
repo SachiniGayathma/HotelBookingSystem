@@ -25,10 +25,10 @@ public class BookingService {
     private final BookingRepository repository;
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${booking.hotel.service.url:${hotel.service.url:https://hotel-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io}}")
+    @Value("${booking.hotel.service.url:https://hotel-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io}")
     private String hotelServiceUrl;
 
-    @Value("${booking.payment.service.url:${payment.service.url:https://payment-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io}}")
+    @Value("${booking.payment.service.url:https://payment-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io}")
     private String paymentServiceUrl;
 
     public BookingService(BookingRepository repository) {
@@ -234,7 +234,7 @@ public class BookingService {
             try {
                 System.out.println("Triggering Notification Webhook...");
                 org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
-                String notifyUrl = "http://localhost:8084/notifications/booking-success";
+                String notifyUrl = "https://notify-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io/notifications/booking-success";
                 restTemplate.postForObject(notifyUrl, savedBooking, String.class);
             } catch (Exception ex) {
                 System.out.println("Webhook failed, but booking succeeded: " + ex.getMessage());

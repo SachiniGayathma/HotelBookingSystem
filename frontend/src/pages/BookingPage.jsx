@@ -45,7 +45,6 @@ export default function BookingPage() {
   const [isAvailable, setIsAvailable] = useState(false);
   const [availabilityMessage, setAvailabilityMessage] = useState("");
   const [bookingMessage, setBookingMessage] = useState("");
-  const [pendingPaymentUrl, setPendingPaymentUrl] = useState("");
   const [busy, setBusy] = useState(false);
 
   const selectedRoomType = ROOM_TYPES.find((r) => r.key === roomType) || ROOM_TYPES[1];
@@ -189,7 +188,6 @@ export default function BookingPage() {
 
     setBusy(true);
     setBookingMessage("");
-    setPendingPaymentUrl("");
 
     const payload = {
       hotelId,
@@ -247,8 +245,8 @@ export default function BookingPage() {
         }),
       );
 
-      setPendingPaymentUrl(paymentUrl);
-      setBookingMessage("Payment session created. Click 'Proceed to Payment' to continue.");
+      setBookingMessage("Redirecting to payment...");
+      window.location.href = paymentUrl;
     } catch (error) {
       const backendError =
         typeof error?.response?.data === "string"
@@ -268,7 +266,6 @@ export default function BookingPage() {
     setIsAvailable(false);
     setAvailabilityMessage("");
     setBookingMessage("");
-    setPendingPaymentUrl("");
     setMealPlan("NONE");
   };
 
@@ -382,7 +379,7 @@ export default function BookingPage() {
               />
             </div>
 
-            <div className="space-y-2 sm:col-span-2">
+            <div className="space-y-2">
               <label className="font-semibold text-sm">Check-in Date</label>
               <input
                 type="date"
@@ -414,7 +411,7 @@ export default function BookingPage() {
               />
             </div>
 
-            <div className="space-y-2 sm:col-span-2">
+            <div className="space-y-2">
               <label className="font-semibold text-sm">Check-out Date</label>
               <input
                 type="date"
@@ -528,17 +525,6 @@ export default function BookingPage() {
                 >
                   {busy ? "Booking..." : "Book Now"}
                 </button>
-                {pendingPaymentUrl ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      window.location.href = pendingPaymentUrl;
-                    }}
-                    className="rounded-xl bg-emerald-600 px-5 py-2 text-white hover:bg-emerald-700"
-                  >
-                    Proceed to Payment
-                  </button>
-                ) : null}
                 <button
                   type="button"
                   onClick={handleClearSelection}
