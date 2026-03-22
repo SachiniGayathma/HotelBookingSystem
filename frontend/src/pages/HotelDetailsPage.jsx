@@ -45,6 +45,9 @@ export default function HotelDetailsPage() {
   const [roomActionMessage, setRoomActionMessage] = useState("");
   const [roomActionError, setRoomActionError] = useState("");
 
+  const [updateRoomType, setUpdateRoomType] = useState("");
+  const [updateAvailableRooms, setUpdateAvailableRooms] = useState("");
+
   const roomCount = useMemo(() => hotel?.rooms?.length ?? 0, [hotel]);
 
   async function loadHotelDetails() {
@@ -122,6 +125,45 @@ export default function HotelDetailsPage() {
     } catch (requestError) {
       setRoomActionError(
         requestError?.response?.data?.message || "Failed to reserve room.",
+      );
+    }
+  }
+
+  async function handleQuickInventoryUpdate(event) {
+    event.preventDefault();
+    setRoomActionError("");
+    setRoomActionMessage("");
+
+    const existingRoom = (hotel?.rooms ?? []).find(
+      (room) => room.roomType === updateRoomType,
+    );
+
+    if (!existingRoom) {
+      setRoomActionError("Room type not found.");
+      return;
+    }
+
+    const newAvailableCount = Number(updateAvailableRooms) || 0;
+    const delta = newAvailableCount - existingRoom.availableRooms;
+
+    const payload = {
+      roomType: updateRoomType,
+      pricePerNight: existingRoom.pricePerNight,
+      totalRooms: 0,
+      availableRooms: delta,
+    };
+
+    try {
+      await addRoomToHotel(id, payload);
+      setRoomActionMessage(
+        `${updateRoomType} available rooms updated to ${newAvailableCount}.`,
+      );
+      setUpdateAvailableRooms("");
+      await loadHotelDetails();
+    } catch (requestError) {
+      setRoomActionError(
+        requestError?.response?.data?.message ||
+          "Failed to update room inventory.",
       );
     }
   }
@@ -273,6 +315,51 @@ export default function HotelDetailsPage() {
                     </div>
                   ) : null}
                 </div>
+              </article>
+
+              <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h3 className="text-lg font-bold">Quick inventory update</h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  Update available rooms for existing room types.
+                </p>
+                <form
+                  className="mt-3 grid gap-3"
+                  onSubmit={handleQuickInventoryUpdate}
+                >
+                  <label className="grid gap-1 text-sm font-medium text-slate-700">
+                    Select room type
+                    <select
+                      value={updateRoomType}
+                      onChange={(e) => setUpdateRoomType(e.target.value)}
+                      className="rounded-lg border border-slate-200 px-3 py-2"
+                      required
+                    >
+                      <option value="">-- Choose a room type --</option>
+                      {(hotel?.rooms ?? []).map((room) => (
+                        <option key={room.roomType} value={room.roomType}>
+                          {room.roomType} (Price: ${room.pricePerNight}, Total:{" "}
+                          {room.totalRooms}, Available: {room.availableRooms})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="grid gap-1 text-sm font-medium text-slate-700">
+                    New available count
+                    <input
+                      type="number"
+                      value={updateAvailableRooms}
+                      onChange={(e) => setUpdateAvailableRooms(e.target.value)}
+                      className="rounded-lg border border-slate-200 px-3 py-2"
+                      required
+                    />
+                  </label>
+                  <button
+                    type="submit"
+                    className="mt-1 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                  >
+                    Update inventory
+                  </button>
+                </form>
               </article>
 
               <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
