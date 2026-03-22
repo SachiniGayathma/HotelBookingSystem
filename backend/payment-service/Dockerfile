@@ -14,6 +14,6 @@ COPY src ./src
 
 RUN ./mvnw clean package -DskipTests
 
-EXPOSE 8080
+EXPOSE 8082
 
-CMD ["java", "-jar", "target/booking-service-0.0.1-SNAPSHOT.jar"]
+CMD ["java", "-jar", "target/payment-service-0.0.1-SNAPSHOT.jar"]
