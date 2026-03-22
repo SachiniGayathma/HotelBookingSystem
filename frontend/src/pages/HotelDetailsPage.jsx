@@ -95,6 +95,7 @@ export default function HotelDetailsPage() {
 
   async function handleAvailabilityCheck() {
     try {
+      setRoomActionMessage("");
       setRoomActionError("");
       const response = await checkRoomAvailability(id, roomType);
       const availableCount = Number(response?.data?.availableRooms ?? 0);
@@ -113,6 +114,7 @@ export default function HotelDetailsPage() {
 
   async function handleReserveRoom() {
     try {
+      setRoomActionMessage("");
       setRoomActionError("");
       await reserveRoom(id, roomType);
       setRoomActionMessage(`${roomType} room reserved successfully.`);
@@ -258,6 +260,18 @@ export default function HotelDetailsPage() {
                       Reserve room
                     </button>
                   </div>
+
+                  {roomActionMessage ? (
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                      {roomActionMessage}
+                    </div>
+                  ) : null}
+
+                  {roomActionError ? (
+                    <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                      {roomActionError}
+                    </div>
+                  ) : null}
                 </div>
               </article>
 
@@ -318,18 +332,6 @@ export default function HotelDetailsPage() {
                   </button>
                 </form>
               </article>
-
-              {roomActionMessage ? (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                  {roomActionMessage}
-                </div>
-              ) : null}
-
-              {roomActionError ? (
-                <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                  {roomActionError}
-                </div>
-              ) : null}
             </section>
           </div>
         ) : null}
