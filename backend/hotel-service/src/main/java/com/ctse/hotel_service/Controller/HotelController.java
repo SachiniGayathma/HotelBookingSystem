@@ -17,8 +17,9 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 
 import jakarta.validation.Valid;
 
+import com.ctse.hotel_service.Dto.HotelWriteRequest;
+import com.ctse.hotel_service.Dto.RoomWriteRequest;
 import com.ctse.hotel_service.Entities.Hotel;
-import com.ctse.hotel_service.Entities.Room;
 import com.ctse.hotel_service.Services.HotelService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,8 +37,8 @@ public class HotelController {
     // CREATE
     @Operation(summary = "Create a new hotel")
     @PostMapping
-    public ResponseEntity<Hotel> createHotel(@Valid @RequestBody Hotel hotel) {
-        return ResponseEntity.ok(hotelService.addHotel(hotel));
+    public ResponseEntity<Hotel> createHotel(@Valid @RequestBody HotelWriteRequest request) {
+        return ResponseEntity.ok(hotelService.addHotel(request));
     }
 
     // READ ALL
@@ -66,9 +67,9 @@ public class HotelController {
     @PutMapping("/{id}")
     public ResponseEntity<Hotel> updateHotel(
             @PathVariable String id,
-            @RequestBody Hotel hotel) {
+            @Valid @RequestBody HotelWriteRequest request) {
 
-        return ResponseEntity.ok(hotelService.updateHotel(id, hotel));
+        return ResponseEntity.ok(hotelService.updateHotel(id, request));
     }
 
     // DELETE
@@ -98,9 +99,9 @@ public class HotelController {
     @PostMapping("/{id}/rooms")
     public ResponseEntity<Hotel> addRoom(
             @PathVariable String id,
-            @Valid @RequestBody Room room) {
+            @Valid @RequestBody RoomWriteRequest request) {
 
-        return ResponseEntity.ok(hotelService.addRoomToHotel(id, room));
+        return ResponseEntity.ok(hotelService.addRoomToHotel(id, request));
     }
 
     // CHECK AVAILABILITY

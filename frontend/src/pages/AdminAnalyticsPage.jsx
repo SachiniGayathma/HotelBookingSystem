@@ -9,7 +9,7 @@ export default function AdminAnalyticsPage() {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const res = await axios.get("http://localhost:8084/analytics/dashboard");
+        const res = await axios.get("https://notify-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io/analytics/dashboard");
         setStats(res.data);
       } catch (err) {
         console.error("Failed to load analytics", err);

@@ -14,13 +14,13 @@ export default function HotelReviewsPage() {
       try {
         // Fetch reviews from your notify-analytics-service
         const res = await axios.get(
-          `http://localhost:8084/reviews/hotel/${hotelId}`,
+          `https://notify-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io/reviews/hotel/${hotelId}`,
         );
         setReviews(res.data);
 
         // Also fetch hotel name for the header
         const hotelRes = await axios.get(
-          `https://hotel-service-app.agreeableocean-2c4c42d0.southeastasia.azurecontainerapps.io/hotels/${hotelId}`,
+          `https://hotel-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io/hotels/${hotelId}`,
         );
         setHotelName(hotelRes.data.name);
       } catch (err) {

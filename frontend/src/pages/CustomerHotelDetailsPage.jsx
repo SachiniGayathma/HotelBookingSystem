@@ -65,7 +65,7 @@ export default function CustomerHotelDetailsPage() {
     const fetchAvgRating = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:8084/reviews/hotel/${id}`,
+          `https://notify-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io/reviews/hotel/${id}`,
         );
         if (res.data.length > 0) {
           const sum = res.data.reduce((acc, rev) => acc + rev.rating, 0);
