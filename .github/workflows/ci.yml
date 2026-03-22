@@ -27,6 +27,27 @@ jobs:
           chmod +x ./mvnw
           ./mvnw clean install
 
+      # BUILD BOOKING SERVICE
+      - name: Build Booking Service
+        working-directory: backend/booking-service
+        run: |
+          chmod +x ./mvnw
+          ./mvnw clean install
+
+      # BUILD PAYMENT SERVICE
+      - name: Build Payment Service
+        working-directory: backend/payment-service
+        run: |
+          chmod +x ./mvnw
+          ./mvnw clean install
+
+      # BUILD NOTIFY ANALYTICS SERVICE
+      - name: Build Notify Analytics Service
+        working-directory: backend/notify-analytics-service
+        run: |
+          chmod +x ./mvnw
+          ./mvnw clean install
+
       # SONARCLOUD SCAN (ONLY WHEN PR TARGET IS MAIN)
       - name: SonarCloud Scan
         if: github.base_ref == 'main'
@@ -51,3 +72,35 @@ jobs:
       - name: Push Docker Image
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/hotel-service
+
+      # BUILD BOOKING SERVICE IMAGE
+      - name: Build Booking Service Image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/booking-service ./backend/booking-service
+
+      # PUSH BOOKING SERVICE IMAGE
+      - name: Push Booking Service Image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/booking-service
+
+      # BUILD PAYMENT SERVICE IMAGE (ONLY IF DOCKERFILE EXISTS)
+      - name: Build Payment Service Image
+        if: ${{ hashFiles('backend/payment-service/Dockerfile') != '' }}
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/payment-service ./backend/payment-service
+
+      # PUSH PAYMENT SERVICE IMAGE (ONLY IF DOCKERFILE EXISTS)
+      - name: Push Payment Service Image
+        if: ${{ hashFiles('backend/payment-service/Dockerfile') != '' }}
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/payment-service
+
+      # BUILD NOTIFY ANALYTICS SERVICE IMAGE
+      - name: Build Notify Analytics Service Image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/notify-analytics-service ./backend/notify-analytics-service
+
+      # PUSH NOTIFY ANALYTICS SERVICE IMAGE
+      - name: Push Notify Analytics Service Image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/notify-analytics-service

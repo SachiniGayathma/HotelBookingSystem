@@ -125,8 +125,29 @@ public class HotelService {
 
         Hotel hotel = getHotelById(hotelId);
 
+        if (room == null || room.getRoomType() == null) {
+            throw new InvalidRoomTypeException("Room type is required");
+        }
+
         if (hotel.getRooms() == null) {
             hotel.setRooms(new ArrayList<>());
+        }
+
+        for (Room existingRoom : hotel.getRooms()) {
+            if (existingRoom.getRoomType() == room.getRoomType()) {
+                if (room.getPricePerNight() > 0) {
+                    existingRoom.setPricePerNight(room.getPricePerNight());
+                }
+
+                int additionalTotalRooms = Math.max(room.getTotalRooms(), 0);
+                int additionalAvailableRooms = Math.max(room.getAvailableRooms(), 0);
+
+                existingRoom.setTotalRooms(existingRoom.getTotalRooms() + additionalTotalRooms);
+                int updatedAvailableRooms = existingRoom.getAvailableRooms() + additionalAvailableRooms;
+                existingRoom.setAvailableRooms(Math.min(updatedAvailableRooms, existingRoom.getTotalRooms()));
+
+                return hotelRepository.save(hotel);
+            }
         }
 
         hotel.getRooms().add(room);
@@ -134,8 +155,8 @@ public class HotelService {
         return hotelRepository.save(hotel);
     }
 
-    // CHECK ROOM AVAILABILITY
-    public boolean checkAvailability(String hotelId, String roomType) {
+    // CHECK ROOM AVAILABILITY COUNT
+    public int checkAvailability(String hotelId, String roomType) {
         Hotel hotel = getHotelById(hotelId);
 
         if (roomType == null || roomType.isBlank()) {
@@ -143,12 +164,13 @@ public class HotelService {
         }
 
         if (hotel.getRooms() == null) {
-            return false;
+            return 0;
         }
 
         return hotel.getRooms().stream()
                 .filter(room -> room.getRoomType().name().equalsIgnoreCase(roomType))
-                .anyMatch(room -> room.getAvailableRooms() > 0);
+                .mapToInt(Room::getAvailableRooms)
+                .sum();
     }
 
     // RESERVE ROOM
