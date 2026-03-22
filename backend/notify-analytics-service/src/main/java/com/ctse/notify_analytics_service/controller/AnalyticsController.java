@@ -26,8 +26,8 @@ public class AnalyticsController {
 
         try {
             // 1. Fetch Data from all 3 Microservices
-            Map[] hotelsArray = restTemplate.getForObject("http://localhost:8081/hotels", Map[].class);
-            Map[] bookingsArray = restTemplate.getForObject("http://localhost:8080/api/bookings/all", Map[].class);
+            Map[] hotelsArray = restTemplate.getForObject("https://hotel-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io/hotels", Map[].class);
+            Map[] bookingsArray = restTemplate.getForObject("https://booking-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io/api/bookings/all", Map[].class);
             List<Review> allReviews = reviewRepository.findAll();
 
             List<Map> hotels = hotelsArray != null ? Arrays.asList(hotelsArray) : new ArrayList<>();
@@ -63,7 +63,7 @@ public class AnalyticsController {
                     dateStr = ((String) createdAtObj).substring(0, 10);
                 }
                 
-                if ("CONFIRMED".equals(status)) {
+                if ("CONFIRMED".equals(status) || "COMPLETED".equals(status)) {
                     double price = b.get("totalPrice") != null ? Double.parseDouble(b.get("totalPrice").toString()) : 0.0;
                     totalRevenue += price;
 
