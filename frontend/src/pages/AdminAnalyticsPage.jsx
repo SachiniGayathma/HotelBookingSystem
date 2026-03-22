@@ -45,9 +45,11 @@ export default function AdminAnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fff8f6] text-slate-900 p-8">
-      {/* Header */}
-      <header className="mb-8 flex justify-between items-center rounded-2xl border border-rose-100 bg-white px-6 py-5 shadow-sm">
+    <div className="min-h-screen bg-[#fff8f6] text-slate-900">
+      <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-10 lg:py-12">
+        
+        {/* Header */}
+        <header className="mb-8 flex justify-between items-center rounded-2xl border border-rose-100 bg-white px-6 py-5 shadow-sm">
         <div>
           <h1 className="text-3xl font-black text-rose-600">System Analytics</h1>
           <p className="text-slate-600 font-medium mt-1">Real-time performance of the Hotel Booking Platform</p>
@@ -134,7 +136,7 @@ export default function AdminAnalyticsPage() {
           </table>
         </div>
       </section>
-      
+      </main>
     </div>
   );
 }
