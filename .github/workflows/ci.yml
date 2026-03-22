@@ -26,35 +26,30 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
-      # BUILD HOTEL SERVICE
       - name: Build Hotel Service
         working-directory: backend/hotel-service
         run: |
           chmod +x ./mvnw
           ./mvnw clean install
 
-      # BUILD BOOKING SERVICE
       - name: Build Booking Service
         working-directory: backend/booking-service
         run: |
           chmod +x ./mvnw
           ./mvnw clean install
 
-      # BUILD PAYMENT SERVICE
       - name: Build Payment Service
         working-directory: backend/payment-service
         run: |
           chmod +x ./mvnw
           ./mvnw clean install
 
-      # BUILD NOTIFY ANALYTICS SERVICE
       - name: Build Notify Analytics Service
         working-directory: backend/notify-analytics-service
         run: |
           chmod +x ./mvnw
           ./mvnw clean install
 
-      # SONARCLOUD SCAN (ONLY WHEN PR TARGET IS MAIN)
       - name: SonarCloud Scan
         if: github.event_name == 'pull_request' && github.base_ref == 'main'
         working-directory: backend/hotel-service
@@ -62,41 +57,35 @@ jobs:
           chmod +x ./mvnw
           ./mvnw sonar:sonar -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
-      # LOGIN TO AZURE CONTAINER REGISTRY
       - name: Login to Azure Container Registry
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         run: |
           echo "${{ secrets.ACR_PASSWORD }}" | docker login "${{ secrets.ACR_LOGIN_SERVER }}" -u "${{ secrets.ACR_USERNAME }}" --password-stdin
 
-      # BUILD & PUSH HOTEL IMAGE
       - name: Build and Push Hotel Image
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         run: |
           docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/hotel-service:${{ github.sha }} ./backend/hotel-service
           docker push ${{ secrets.ACR_LOGIN_SERVER }}/hotel-service:${{ github.sha }}
 
-      # BUILD & PUSH BOOKING IMAGE
       - name: Build and Push Booking Image
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         run: |
           docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/booking-service:${{ github.sha }} ./backend/booking-service
           docker push ${{ secrets.ACR_LOGIN_SERVER }}/booking-service:${{ github.sha }}
 
-      # BUILD & PUSH PAYMENT IMAGE
       - name: Build and Push Payment Image
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev' && hashFiles('backend/payment-service/Dockerfile') != ''
         run: |
           docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/payment-service:${{ github.sha }} ./backend/payment-service
           docker push ${{ secrets.ACR_LOGIN_SERVER }}/payment-service:${{ github.sha }}
 
-      # BUILD & PUSH NOTIFY ANALYTICS IMAGE
       - name: Build and Push Notify Analytics Image
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         run: |
           docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/notify-analytics-service:${{ github.sha }} ./backend/notify-analytics-service
           docker push ${{ secrets.ACR_LOGIN_SERVER }}/notify-analytics-service:${{ github.sha }}
 
-      # AZURE LOGIN
       - name: Azure Login
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         uses: azure/login@v2
@@ -105,38 +94,54 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # DEPLOY HOTEL SERVICE
+      - name: Ensure providers are registered
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+        run: |
+          az extension add --name containerapp --upgrade
+          az provider register --namespace Microsoft.App --wait
+          az provider register --namespace Microsoft.OperationalInsights --wait
+          az provider register --namespace Microsoft.ContainerRegistry --wait
+
       - name: Deploy Hotel Service
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-        uses: azure/container-apps-deploy-action@v1
-        with:
-          imageToDeploy: ${{ secrets.ACR_LOGIN_SERVER }}/hotel-service:${{ github.sha }}
-          containerAppName: ${{ secrets.AZURE_HOTEL_APP_NAME }}
-          resourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP }}
+        run: |
+          az containerapp up \
+            --name ${{ secrets.AZURE_HOTEL_APP_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --environment ctse-env \
+            --image ${{ secrets.ACR_LOGIN_SERVER }}/hotel-service:${{ github.sha }} \
+            --ingress external \
+            --target-port 8080
 
-      # DEPLOY BOOKING SERVICE
       - name: Deploy Booking Service
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-        uses: azure/container-apps-deploy-action@v1
-        with:
-          imageToDeploy: ${{ secrets.ACR_LOGIN_SERVER }}/booking-service:${{ github.sha }}
-          containerAppName: ${{ secrets.AZURE_BOOKING_APP_NAME }}
-          resourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP }}
+        run: |
+          az containerapp up \
+            --name ${{ secrets.AZURE_BOOKING_APP_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --environment ctse-env \
+            --image ${{ secrets.ACR_LOGIN_SERVER }}/booking-service:${{ github.sha }} \
+            --ingress external \
+            --target-port 8082
 
-      # DEPLOY PAYMENT SERVICE
       - name: Deploy Payment Service
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev' && hashFiles('backend/payment-service/Dockerfile') != ''
-        uses: azure/container-apps-deploy-action@v1
-        with:
-          imageToDeploy: ${{ secrets.ACR_LOGIN_SERVER }}/payment-service:${{ github.sha }}
-          containerAppName: ${{ secrets.AZURE_PAYMENT_APP_NAME }}
-          resourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP }}
+        run: |
+          az containerapp up \
+            --name ${{ secrets.AZURE_PAYMENT_APP_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --environment ctse-env \
+            --image ${{ secrets.ACR_LOGIN_SERVER }}/payment-service:${{ github.sha }} \
+            --ingress external \
+            --target-port 8081
 
-      # DEPLOY NOTIFY ANALYTICS SERVICE
       - name: Deploy Notify Analytics Service
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-        uses: azure/container-apps-deploy-action@v1
-        with:
-          imageToDeploy: ${{ secrets.ACR_LOGIN_SERVER }}/notify-analytics-service:${{ github.sha }}
-          containerAppName: ${{ secrets.AZURE_NOTIFY_APP_NAME }}
-          resourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP }}
+        run: |
+          az containerapp up \
+            --name ${{ secrets.AZURE_NOTIFY_APP_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --environment ctse-env \
+            --image ${{ secrets.ACR_LOGIN_SERVER }}/notify-analytics-service:${{ github.sha }} \
+            --ingress external \
+            --target-port 8084
