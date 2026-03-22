@@ -158,6 +158,21 @@ export default function BookingPage() {
       const result = await createBooking(payload);
       if (result?.data?.id) {
         setBookingMessage(`Booking successful! ID: ${result.data.id}`);
+        
+        /* --- EMAIL RECEIPT BRIDGE START --- */
+        // Save booking details to browser memory so the Success page 
+        // can trigger the email after the Stripe redirect.
+        localStorage.setItem("recentBooking", JSON.stringify({
+          booking_id: result.data.id,
+          hotel_name: hotel?.name || "StayEase Hotel",
+          check_in: checkIn,
+          check_out: checkOut,
+          room_type: roomType,
+          total_price: totalPrice,
+          user_email: "rocky1204r@gmail.com" 
+        }));
+        /* --- EMAIL RECEIPT BRIDGE END --- */
+
         setTimeout(() => {
           const paymentRedirectUrl = result?.data?.paymentId;
           if (typeof paymentRedirectUrl === "string" && paymentRedirectUrl.startsWith("http")) {
