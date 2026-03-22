@@ -14,7 +14,7 @@ export default function HotelReviewsPage() {
       try {
         // Fetch reviews from your notify-analytics-service
         const res = await axios.get(
-          `http://localhost:8084/reviews/hotel/${hotelId}`,
+          `https://notify-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io/reviews/hotel/${hotelId}`,
         );
         setReviews(res.data);
 
