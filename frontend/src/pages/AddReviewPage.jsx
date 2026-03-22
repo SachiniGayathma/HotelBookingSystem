@@ -13,7 +13,7 @@ export default function AddReviewPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post("http://localhost:8084/reviews", {
+      await axios.post("https://notify-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io/reviews", {
         hotelId,
         userId: "user123", 
         rating,

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import axios from "axios";
-import { getHotelById } from "../services/hotelApi";
-import { checkBookingAvailability, getBookingQuote } from "../services/bookingApi";
+import { checkRoomAvailability, getHotelById } from "../services/hotelApi";
+import { getBookingQuote } from "../services/bookingApi";
 
 const ROOM_TYPES = [
   { key: "SINGLE", label: "Single", max: 1 },
@@ -45,6 +45,7 @@ export default function BookingPage() {
   const [isAvailable, setIsAvailable] = useState(false);
   const [availabilityMessage, setAvailabilityMessage] = useState("");
   const [bookingMessage, setBookingMessage] = useState("");
+  const [pendingPaymentUrl, setPendingPaymentUrl] = useState("");
   const [busy, setBusy] = useState(false);
 
   const selectedRoomType = ROOM_TYPES.find((r) => r.key === roomType) || ROOM_TYPES[1];
@@ -137,7 +138,7 @@ export default function BookingPage() {
 
     setBusy(true);
     try {
-      const response = await checkBookingAvailability(hotelId, roomType, checkIn, checkOut, totalGuests);
+      const response = await checkRoomAvailability(hotelId, roomType);
       const rawAvailability = response?.data;
       let availableRooms = 0;
 
@@ -188,6 +189,7 @@ export default function BookingPage() {
 
     setBusy(true);
     setBookingMessage("");
+    setPendingPaymentUrl("");
 
     const payload = {
       hotelId,
@@ -245,10 +247,14 @@ export default function BookingPage() {
         }),
       );
 
-      setBookingMessage("Redirecting to payment...");
-      window.location.href = paymentUrl;
+      setPendingPaymentUrl(paymentUrl);
+      setBookingMessage("Payment session created. Click 'Proceed to Payment' to continue.");
     } catch (error) {
-      setBookingMessage(`Booking failed: ${error?.response?.data || error.message}`);
+      const backendError =
+        typeof error?.response?.data === "string"
+          ? error.response.data
+          : error?.response?.data?.message || error.message;
+      setBookingMessage(`Booking failed: ${backendError}`);
       console.error(error);
     } finally {
       setBusy(false);
@@ -262,6 +268,7 @@ export default function BookingPage() {
     setIsAvailable(false);
     setAvailabilityMessage("");
     setBookingMessage("");
+    setPendingPaymentUrl("");
     setMealPlan("NONE");
   };
 
@@ -521,6 +528,17 @@ export default function BookingPage() {
                 >
                   {busy ? "Booking..." : "Book Now"}
                 </button>
+                {pendingPaymentUrl ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.location.href = pendingPaymentUrl;
+                    }}
+                    className="rounded-xl bg-emerald-600 px-5 py-2 text-white hover:bg-emerald-700"
+                  >
+                    Proceed to Payment
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={handleClearSelection}

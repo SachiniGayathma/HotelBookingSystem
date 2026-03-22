@@ -2,7 +2,7 @@ import axios from "axios";
 
 const HOTEL_API_BASE_URL =
   import.meta.env.VITE_HOTEL_API_BASE_URL ||
-  "/api/hotels";
+  "https://hotel-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io/hotels";
 
 export const AMENITY_OPTIONS = [
   "WIFI",

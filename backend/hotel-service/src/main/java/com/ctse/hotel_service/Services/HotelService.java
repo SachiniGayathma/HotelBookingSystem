@@ -6,6 +6,8 @@ import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 
+import com.ctse.hotel_service.Dto.HotelWriteRequest;
+import com.ctse.hotel_service.Dto.RoomWriteRequest;
 import com.ctse.hotel_service.Entities.Amenity;
 import com.ctse.hotel_service.Entities.Hotel;
 import com.ctse.hotel_service.Entities.Room;
@@ -27,7 +29,17 @@ public class HotelService {
     }
 
     // ADD HOTEL
-    public synchronized Hotel addHotel(Hotel hotel) {
+    public synchronized Hotel addHotel(HotelWriteRequest request) {
+        Hotel hotel = new Hotel();
+        hotel.setName(request.getName());
+        hotel.setCity(request.getCity());
+        hotel.setAddress(request.getAddress());
+        hotel.setLatitude(request.getLatitude());
+        hotel.setLongitude(request.getLongitude());
+        hotel.setDescription(request.getDescription());
+        hotel.setAmenities(request.getAmenities());
+        hotel.setImages(request.getImages());
+        hotel.setRooms(new ArrayList<>());
         hotel.setHotelCode(generateNextHotelCode());
         return hotelRepository.save(hotel);
     }
@@ -72,7 +84,7 @@ public class HotelService {
     }
 
     // UPDATE
-    public Hotel updateHotel(String id, Hotel updatedHotel) {
+    public Hotel updateHotel(String id, HotelWriteRequest updatedHotel) {
 
         Hotel existingHotel = getHotelById(id);
 
@@ -84,7 +96,6 @@ public class HotelService {
         existingHotel.setDescription(updatedHotel.getDescription());
         existingHotel.setAmenities(updatedHotel.getAmenities());
         existingHotel.setImages(updatedHotel.getImages());
-        existingHotel.setRooms(updatedHotel.getRooms());
 
         return hotelRepository.save(existingHotel);
     }
@@ -121,11 +132,11 @@ public class HotelService {
     }
 
     // ADD ROOM TO HOTEL
-    public Hotel addRoomToHotel(String hotelId, Room room) {
+    public Hotel addRoomToHotel(String hotelId, RoomWriteRequest roomRequest) {
 
         Hotel hotel = getHotelById(hotelId);
 
-        if (room == null || room.getRoomType() == null) {
+        if (roomRequest == null || roomRequest.getRoomType() == null) {
             throw new InvalidRoomTypeException("Room type is required");
         }
 
@@ -134,13 +145,13 @@ public class HotelService {
         }
 
         for (Room existingRoom : hotel.getRooms()) {
-            if (existingRoom.getRoomType() == room.getRoomType()) {
-                if (room.getPricePerNight() > 0) {
-                    existingRoom.setPricePerNight(room.getPricePerNight());
+            if (existingRoom.getRoomType() == roomRequest.getRoomType()) {
+                if (roomRequest.getPricePerNight() > 0) {
+                    existingRoom.setPricePerNight(roomRequest.getPricePerNight());
                 }
 
-                int additionalTotalRooms = Math.max(room.getTotalRooms(), 0);
-                int additionalAvailableRooms = Math.max(room.getAvailableRooms(), 0);
+                int additionalTotalRooms = Math.max(roomRequest.getTotalRooms(), 0);
+                int additionalAvailableRooms = Math.max(roomRequest.getAvailableRooms(), 0);
 
                 existingRoom.setTotalRooms(existingRoom.getTotalRooms() + additionalTotalRooms);
                 int updatedAvailableRooms = existingRoom.getAvailableRooms() + additionalAvailableRooms;
@@ -149,6 +160,16 @@ public class HotelService {
                 return hotelRepository.save(hotel);
             }
         }
+
+        int normalizedTotalRooms = Math.max(roomRequest.getTotalRooms(), 0);
+        int normalizedAvailableRooms = Math.max(roomRequest.getAvailableRooms(), 0);
+        normalizedAvailableRooms = Math.min(normalizedAvailableRooms, normalizedTotalRooms);
+
+        Room room = new Room(
+                roomRequest.getRoomType(),
+                roomRequest.getPricePerNight(),
+                normalizedTotalRooms,
+                normalizedAvailableRooms);
 
         hotel.getRooms().add(room);
 

@@ -25,7 +25,7 @@ public class ReviewController {
     @PostMapping
     public ResponseEntity<?> addReview(@RequestBody Review review) {
         try {
-            String bookingUrl = "http://localhost:8080/api/bookings/all";
+            String bookingUrl = "https://booking-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io/api/bookings/all";
             Map[] allBookings = restTemplate.getForObject(bookingUrl, Map[].class);
             
             boolean hasBooked = false;
