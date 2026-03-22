@@ -122,6 +122,13 @@ export default function AdminHotelsPage() {
             <span className="rounded-full bg-rose-50 px-3 py-1 text-rose-600">
               Admin Hotels
             </span>
+
+            <Link
+  to="/all-payments"
+  className="rounded-full px-3 py-1 transition hover:bg-slate-100"
+>
+  View All Payments
+</Link>
           </nav>
         </header>
 
