@@ -203,6 +203,20 @@ export default function BookingPage() {
       };
       localStorage.setItem("pendingBookingAfterPayment", JSON.stringify(pendingBooking));
 
+      // Save details for the Success page to trigger email receipt after Stripe redirect.
+      localStorage.setItem(
+        "recentBooking",
+        JSON.stringify({
+          booking_id: pendingBooking.bookingId || null,
+          hotel_name: hotel?.name || "StayEase Hotel",
+          check_in: checkIn,
+          check_out: checkOut,
+          room_type: roomType,
+          total_price: quotedTotalUsd,
+          user_email: "rocky1204r@gmail.com",
+        }),
+      );
+
       setBookingMessage("Redirecting to payment...");
       window.location.href = paymentUrl;
     } catch (error) {
