@@ -111,7 +111,7 @@ jobs:
             --environment ctse-env \
             --image ${{ secrets.ACR_LOGIN_SERVER }}/hotel-service:${{ github.sha }} \
             --ingress external \
-            --target-port 8080
+            --target-port 8081
 
       - name: Deploy Booking Service
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
@@ -122,7 +122,7 @@ jobs:
             --environment ctse-env \
             --image ${{ secrets.ACR_LOGIN_SERVER }}/booking-service:${{ github.sha }} \
             --ingress external \
-            --target-port 8082
+            --target-port 8080
 
       - name: Deploy Payment Service
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev' && hashFiles('backend/payment-service/Dockerfile') != ''
@@ -133,7 +133,7 @@ jobs:
             --environment ctse-env \
             --image ${{ secrets.ACR_LOGIN_SERVER }}/payment-service:${{ github.sha }} \
             --ingress external \
-            --target-port 8081
+            --target-port 8082
 
       - name: Deploy Notify Analytics Service
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
