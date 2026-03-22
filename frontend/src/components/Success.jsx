@@ -1,8 +1,38 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import emailjs from "@emailjs/browser";
 import { completeBookingAfterPayment } from "../services/bookingApi";
 
 export default function Success() {
   const [message, setMessage] = useState("Finalizing your booking...");
+  const emailSent = useRef(false);
+
+  const sendReceiptIfAvailable = async (finalBookingId = null) => {
+    if (emailSent.current) return;
+
+    const bookingDataStr = localStorage.getItem("recentBooking");
+    if (!bookingDataStr) return;
+
+    try {
+      const bookingData = JSON.parse(bookingDataStr);
+      const payload = {
+        ...bookingData,
+        booking_id: finalBookingId || bookingData.booking_id || "N/A",
+      };
+
+      await emailjs.send(
+        "service_xolaaok",
+        "template_j1cm2uc",
+        payload,
+        "VRwWuvzY3ns5B0bfM",
+      );
+
+      emailSent.current = true;
+      localStorage.removeItem("recentBooking");
+      console.log("Digital receipt sent successfully");
+    } catch (err) {
+      console.error("Digital receipt failed:", err);
+    }
+  };
 
   useEffect(() => {
     const finalize = async () => {
@@ -10,17 +40,21 @@ export default function Success() {
 
       if (!raw) {
         setMessage("Your payment has been processed successfully.");
+        await sendReceiptIfAvailable();
         return;
       }
 
       try {
         const pendingBooking = JSON.parse(raw);
 
-        await completeBookingAfterPayment({
+        const response = await completeBookingAfterPayment({
           ...pendingBooking,
           status: "COMPLETED",
         });
+
+        const completedBookingId = response?.data?.id || null;
         localStorage.removeItem("pendingBookingAfterPayment");
+        await sendReceiptIfAvailable(completedBookingId);
         setMessage("Payment and booking completed successfully.");
       } catch (error) {
         setMessage(
