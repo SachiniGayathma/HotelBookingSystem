@@ -270,7 +270,7 @@ export default function HotelsPage() {
                       onClick={(event) => event.stopPropagation()}
                       className="mt-2 block rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700"
                     >
-                      View My Payments
+                      Leave a review
                     </Link>
                   </div>
                 </div>
