@@ -4,6 +4,9 @@ import { getHotelById } from "../services/hotelApi";
 import LoadingSpinner from "../components/LoadingSpinner";
 import axios from "axios";
 
+const FALLBACK_HOTEL_IMAGE =
+  "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1500&q=80";
+
 const AMENITY_STYLES = {
   WIFI: "bg-sky-100 text-sky-700 border-sky-200",
   POOL: "bg-cyan-100 text-cyan-700 border-cyan-200",
@@ -38,22 +41,24 @@ export default function CustomerHotelDetailsPage() {
 
   const hotelImages = hotel?.images?.length
     ? hotel.images
-    : [
-        "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1500&q=80",
-      ];
+    : [FALLBACK_HOTEL_IMAGE];
 
-/* --- REVIEWS ADDITION START --- */
+  /* --- REVIEWS ADDITION START --- */
   const [avgRating, setAvgRating] = useState(0);
 
   useEffect(() => {
     const fetchAvgRating = async () => {
       try {
-        const res = await axios.get(`http://localhost:8084/reviews/hotel/${id}`);
+        const res = await axios.get(
+          `http://localhost:8084/reviews/hotel/${id}`,
+        );
         if (res.data.length > 0) {
           const sum = res.data.reduce((acc, rev) => acc + rev.rating, 0);
           setAvgRating((sum / res.data.length).toFixed(1));
         }
-      } catch (err) { console.error("Rating error", err); }
+      } catch (err) {
+        console.error("Rating error", err);
+      }
     };
     fetchAvgRating();
   }, [id]);
@@ -140,6 +145,25 @@ export default function CustomerHotelDetailsPage() {
     );
   }
 
+  function handleImageError() {
+    if (hotelImages.length <= 1) {
+      setHotel((previous) => {
+        if (!previous) {
+          return previous;
+        }
+
+        return {
+          ...previous,
+          images: [FALLBACK_HOTEL_IMAGE],
+        };
+      });
+      setActiveImageIndex(0);
+      return;
+    }
+
+    showNextImage();
+  }
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,_#ffe5db_0%,_#fff8f6_40%,_#fff_100%)] text-slate-900">
       <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-10 lg:py-12">
@@ -185,6 +209,7 @@ export default function CustomerHotelDetailsPage() {
                 <img
                   src={hotelImages[activeImageIndex]}
                   alt={`${hotel.name} image ${activeImageIndex + 1}`}
+                  onError={handleImageError}
                   className="h-full w-full object-cover"
                 />
 
@@ -234,12 +259,17 @@ export default function CustomerHotelDetailsPage() {
                 </p>
                 <h1 className="mt-2 text-3xl font-black sm:text-4xl flex items-center justify-between gap-4">
                   <span>{hotel.name}</span>
-                  
+
                   {/* --- REVIEWS ADDITION START --- */}
                   {avgRating > 0 && (
                     <span className="flex items-center gap-1.5 text-lg font-bold text-amber-600 bg-amber-50 px-4 py-1.5 rounded-full border border-amber-200 shadow-sm">
                       {/* Razor-sharp SVG Star instead of emoji */}
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-amber-500">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        className="w-6 h-6 text-amber-500"
+                      >
                         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                       </svg>
                       {avgRating}
@@ -247,7 +277,7 @@ export default function CustomerHotelDetailsPage() {
                   )}
                   {/* --- REVIEWS ADDITION END --- */}
                 </h1>
-                
+
                 <p className="mt-2 text-sm text-slate-600">
                   {hotel.city} - {hotel.address}
                 </p>

@@ -1,6 +1,7 @@
 package com.ctse.hotel_service.Controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -105,12 +106,12 @@ public class HotelController {
     // CHECK AVAILABILITY
     @Operation(summary = "Check room availability")
     @GetMapping("/{id}/availability")
-    public ResponseEntity<Boolean> checkAvailability(
+    public ResponseEntity<Map<String, Integer>> checkAvailability(
             @PathVariable String id,
             @RequestParam String roomType) {
 
-        return ResponseEntity.ok(
-                hotelService.checkAvailability(id, roomType));
+        int availableRooms = hotelService.checkAvailability(id, roomType);
+        return ResponseEntity.ok(Map.of("availableRooms", availableRooms));
     }
 
     // RESERVE ROOM

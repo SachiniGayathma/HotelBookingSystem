@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+import LoadingSpinner from "../components/LoadingSpinner";
 import {
   AMENITY_OPTIONS,
   deleteHotel,
@@ -8,6 +9,19 @@ import {
   searchHotelsByCity,
 } from "../services/hotelApi";
 
+const AMENITY_STYLES = {
+  WIFI: "bg-sky-100 text-sky-700 border-sky-200",
+  POOL: "bg-cyan-100 text-cyan-700 border-cyan-200",
+  PARKING: "bg-slate-100 text-slate-700 border-slate-200",
+  RESTAURANT: "bg-orange-100 text-orange-700 border-orange-200",
+  GYM: "bg-violet-100 text-violet-700 border-violet-200",
+  SPA: "bg-emerald-100 text-emerald-700 border-emerald-200",
+};
+
+function amenityClassName(amenity) {
+  return AMENITY_STYLES[amenity] ?? "bg-rose-100 text-rose-700 border-rose-200";
+}
+
 export default function AdminHotelsPage() {
   const [hotels, setHotels] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,6 +29,7 @@ export default function AdminHotelsPage() {
   const [message, setMessage] = useState("");
   const [cityFilter, setCityFilter] = useState("");
   const [amenityFilter, setAmenityFilter] = useState("");
+  const [deleteDialog, setDeleteDialog] = useState(null);
 
   async function loadHotels() {
     try {
@@ -63,17 +78,23 @@ export default function AdminHotelsPage() {
     }
   }
 
-  async function handleDelete(hotelId, hotelName) {
-    const confirmed = window.confirm(`Delete hotel '${hotelName}'?`);
-    if (!confirmed) {
+  function handleDelete(hotelId, hotelName) {
+    setDeleteDialog({ hotelId, hotelName });
+  }
+
+  async function confirmDeleteHotel() {
+    if (!deleteDialog) {
       return;
     }
 
     try {
       setError("");
-      await deleteHotel(hotelId);
-      setHotels((previous) => previous.filter((hotel) => hotel.id !== hotelId));
+      await deleteHotel(deleteDialog.hotelId);
+      setHotels((previous) =>
+        previous.filter((hotel) => hotel.id !== deleteDialog.hotelId),
+      );
       setMessage("Hotel deleted successfully.");
+      setDeleteDialog(null);
     } catch (requestError) {
       setError(
         requestError?.response?.data?.message || "Failed to delete hotel.",
@@ -89,9 +110,9 @@ export default function AdminHotelsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fff8f6] text-slate-900">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ffe7dd_0%,_#fff8f6_48%,_#fff_100%)] text-slate-900">
       <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-10 lg:py-12">
-        <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-rose-100 bg-white px-5 py-4 shadow-sm">
+        <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-rose-200/70 bg-white/90 px-5 py-4 shadow-sm backdrop-blur">
           <Link
             to="/"
             className="text-xl font-extrabold tracking-tight text-rose-500"
@@ -110,11 +131,11 @@ export default function AdminHotelsPage() {
             </span>
 
             <Link
-  to="/all-payments"
-  className="rounded-full px-3 py-1 transition hover:bg-slate-100"
->
-  View All Payments
-</Link>
+              to="/all-payments"
+              className="rounded-full px-3 py-1 transition hover:bg-slate-100"
+            >
+              View All Payments
+            </Link>
           </nav>
         </header>
 
@@ -148,13 +169,13 @@ export default function AdminHotelsPage() {
               value={cityFilter}
               onChange={(event) => setCityFilter(event.target.value)}
               placeholder="Search by city"
-              className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none ring-rose-300 transition focus:ring"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-rose-300 transition focus:border-rose-300 focus:ring"
             />
 
             <select
               value={amenityFilter}
               onChange={(event) => setAmenityFilter(event.target.value)}
-              className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none ring-rose-300 transition focus:ring"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-rose-300 transition focus:border-rose-300 focus:ring"
             >
               <option value="">Filter by amenity</option>
               {AMENITY_OPTIONS.map((amenity) => (
@@ -194,7 +215,10 @@ export default function AdminHotelsPage() {
 
         <section className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {loading ? (
-            <p className="text-sm text-slate-500">Loading hotels...</p>
+            <LoadingSpinner
+              label="Loading hotels..."
+              className="sm:col-span-2 lg:col-span-3"
+            />
           ) : null}
 
           {!loading && hotels.length === 0 ? (
@@ -232,7 +256,7 @@ export default function AdminHotelsPage() {
                   {(hotel.amenities ?? []).slice(0, 3).map((amenity) => (
                     <span
                       key={amenity}
-                      className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700"
+                      className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${amenityClassName(amenity)}`}
                     >
                       {amenity}
                     </span>
@@ -264,6 +288,39 @@ export default function AdminHotelsPage() {
             </article>
           ))}
         </section>
+
+        {deleteDialog ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
+            <div className="w-full max-w-md rounded-2xl border border-rose-200 bg-white p-5 shadow-xl">
+              <h2 className="text-lg font-black text-slate-900">
+                Delete hotel?
+              </h2>
+              <p className="mt-2 text-sm text-slate-600">
+                Are you sure you want to delete{" "}
+                <span className="font-semibold text-slate-800">
+                  {deleteDialog.hotelName}
+                </span>
+                ? This action cannot be undone.
+              </p>
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDeleteDialog(null)}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteHotel}
+                  className="rounded-lg bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </main>
     </div>
   );
