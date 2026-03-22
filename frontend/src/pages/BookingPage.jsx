@@ -207,7 +207,7 @@ export default function BookingPage() {
         return;
       }
 
-      const paymentResponse = await axios.post("/api/payment/create-session", {
+      const paymentResponse = await axios.post("https://payment-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io/api/payment/create-session", {
         amount: amountCents,
         userId: HARDCODED_USER_ID,
       });
