@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { getHotelById } from "../services/hotelApi";
 import LoadingSpinner from "../components/LoadingSpinner";
+import axios from "axios";
 
 const AMENITY_STYLES = {
   WIFI: "bg-sky-100 text-sky-700 border-sky-200",
@@ -40,6 +41,23 @@ export default function CustomerHotelDetailsPage() {
     : [
         "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1500&q=80",
       ];
+
+/* --- REVIEWS ADDITION START --- */
+  const [avgRating, setAvgRating] = useState(0);
+
+  useEffect(() => {
+    const fetchAvgRating = async () => {
+      try {
+        const res = await axios.get(`http://localhost:8084/reviews/hotel/${id}`);
+        if (res.data.length > 0) {
+          const sum = res.data.reduce((acc, rev) => acc + rev.rating, 0);
+          setAvgRating((sum / res.data.length).toFixed(1));
+        }
+      } catch (err) { console.error("Rating error", err); }
+    };
+    fetchAvgRating();
+  }, [id]);
+  /* --- REVIEWS ADDITION END --- */
 
   const rooms = hotel?.rooms ?? [];
   const latitude = Number(hotel?.latitude);
@@ -141,7 +159,7 @@ export default function CustomerHotelDetailsPage() {
                 Book now
               </Link>
               <Link
-                to="/history/user123"
+                to={`/hotels/${id}/reviews`}
                 className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 Reviews & Ratings
@@ -216,6 +234,13 @@ export default function CustomerHotelDetailsPage() {
                 </p>
                 <h1 className="mt-2 text-3xl font-black sm:text-4xl">
                   {hotel.name}
+                  {/* --- REVIEWS ADDITION START --- */}
+  {avgRating > 0 && (
+    <span className="text-lg font-bold text-amber-500 bg-amber-50 px-3 py-1 rounded-full border border-amber-100">
+      ⭐ {avgRating}
+    </span>
+  )}
+  {/* --- REVIEWS ADDITION END --- */}
                 </h1>
                 <p className="mt-2 text-sm text-slate-600">
                   {hotel.city} - {hotel.address}

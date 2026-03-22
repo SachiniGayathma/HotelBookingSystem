@@ -110,6 +110,12 @@ export default function HotelsPage() {
             >
               Support
             </a>
+            <Link
+              to="/admin/analytics"
+              className="rounded-full px-3 py-1 transition hover:bg-slate-100"
+            >
+              Analytics
+            </Link>
           </nav>
         </header>
 
@@ -260,7 +266,7 @@ export default function HotelsPage() {
                     </div>
 
                     <Link
-                      to={`/history/user123`}
+                      to={`/hotels/${hotelId}/add-review`}
                       onClick={(event) => event.stopPropagation()}
                       className="mt-2 block rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700"
                     >

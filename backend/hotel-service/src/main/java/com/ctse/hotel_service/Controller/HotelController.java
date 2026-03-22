@@ -1,6 +1,5 @@
 package com.ctse.hotel_service.Controller;
 
-import java.util.Map;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -106,12 +105,12 @@ public class HotelController {
     // CHECK AVAILABILITY
     @Operation(summary = "Check room availability")
     @GetMapping("/{id}/availability")
-    public ResponseEntity<Map<String, Integer>> checkAvailability(
+    public ResponseEntity<Boolean> checkAvailability(
             @PathVariable String id,
             @RequestParam String roomType) {
 
-        int availableRooms = hotelService.checkAvailability(id, roomType);
-        return ResponseEntity.ok(Map.of("availableRooms", availableRooms));
+        return ResponseEntity.ok(
+                hotelService.checkAvailability(id, roomType));
     }
 
     // RESERVE ROOM
