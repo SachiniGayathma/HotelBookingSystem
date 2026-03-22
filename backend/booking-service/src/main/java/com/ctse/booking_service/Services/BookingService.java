@@ -202,6 +202,18 @@ public class BookingService {
             savedBooking.setPaymentId(externalPaymentRef);
             savedBooking.setStatus("CONFIRMED");
             savedBooking.setUpdatedAt(LocalDate.now());
+
+            // --- ADDED FOR NOTIFICATION SERVICE (START) ---
+            try {
+                System.out.println("Triggering Notification Webhook...");
+                org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+                String notifyUrl = "http://localhost:8084/notifications/booking-success";
+                restTemplate.postForObject(notifyUrl, savedBooking, String.class);
+            } catch (Exception ex) {
+                System.out.println("Webhook failed, but booking succeeded: " + ex.getMessage());
+            }
+            // -------------------------------------------------
+
             return repository.save(savedBooking);
 
         } catch (HttpClientErrorException | HttpServerErrorException e) {
@@ -244,6 +256,11 @@ public class BookingService {
         booking.setUpdatedAt(LocalDate.now());
 
         return repository.save(booking);
+    }
+
+    // --- ADDED FOR ANALYTICS DASHBOARD ---
+    public java.util.List<Booking> getAllBookings() {
+        return repository.findAll();
     }
 
     public List<Booking> getBookingsByUser(String userId) {

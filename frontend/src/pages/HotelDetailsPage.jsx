@@ -1,6 +1,5 @@
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import LoadingSpinner from "../components/LoadingSpinner";
 import {
   ROOM_TYPE_OPTIONS,
   addRoomToHotel,
@@ -8,19 +7,6 @@ import {
   getHotelById,
   reserveRoom,
 } from "../services/hotelApi";
-
-const AMENITY_STYLES = {
-  WIFI: "bg-sky-100 text-sky-700 border-sky-200",
-  POOL: "bg-cyan-100 text-cyan-700 border-cyan-200",
-  PARKING: "bg-slate-100 text-slate-700 border-slate-200",
-  RESTAURANT: "bg-orange-100 text-orange-700 border-orange-200",
-  GYM: "bg-violet-100 text-violet-700 border-violet-200",
-  SPA: "bg-emerald-100 text-emerald-700 border-emerald-200",
-};
-
-function amenityClassName(amenity) {
-  return AMENITY_STYLES[amenity] ?? "bg-rose-100 text-rose-700 border-rose-200";
-}
 
 function roomBadge(availableRooms) {
   if (availableRooms > 5) {
@@ -144,7 +130,9 @@ export default function HotelDetailsPage() {
           </div>
         </div>
 
-        {loading ? <LoadingSpinner label="Loading hotel details..." /> : null}
+        {loading ? (
+          <p className="text-sm text-slate-500">Loading details...</p>
+        ) : null}
 
         {!loading && error ? (
           <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -176,7 +164,7 @@ export default function HotelDetailsPage() {
                 {(hotel.amenities ?? []).map((amenity) => (
                   <span
                     key={amenity}
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${amenityClassName(amenity)}`}
+                    className="rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700"
                   >
                     {amenity}
                   </span>

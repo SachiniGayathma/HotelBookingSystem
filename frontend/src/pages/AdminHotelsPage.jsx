@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import LoadingSpinner from "../components/LoadingSpinner";
 import {
   AMENITY_OPTIONS,
   deleteHotel,
@@ -8,19 +7,6 @@ import {
   searchHotelsByAmenity,
   searchHotelsByCity,
 } from "../services/hotelApi";
-
-const AMENITY_STYLES = {
-  WIFI: "bg-sky-100 text-sky-700 border-sky-200",
-  POOL: "bg-cyan-100 text-cyan-700 border-cyan-200",
-  PARKING: "bg-slate-100 text-slate-700 border-slate-200",
-  RESTAURANT: "bg-orange-100 text-orange-700 border-orange-200",
-  GYM: "bg-violet-100 text-violet-700 border-violet-200",
-  SPA: "bg-emerald-100 text-emerald-700 border-emerald-200",
-};
-
-function amenityClassName(amenity) {
-  return AMENITY_STYLES[amenity] ?? "bg-rose-100 text-rose-700 border-rose-200";
-}
 
 export default function AdminHotelsPage() {
   const [hotels, setHotels] = useState([]);
@@ -122,6 +108,13 @@ export default function AdminHotelsPage() {
             <span className="rounded-full bg-rose-50 px-3 py-1 text-rose-600">
               Admin Hotels
             </span>
+
+            <Link
+  to="/all-payments"
+  className="rounded-full px-3 py-1 transition hover:bg-slate-100"
+>
+  View All Payments
+</Link>
           </nav>
         </header>
 
@@ -201,15 +194,12 @@ export default function AdminHotelsPage() {
 
         <section className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {loading ? (
-            <LoadingSpinner
-              label="Loading hotels..."
-              className="sm:col-span-2 lg:col-span-3"
-            />
+            <p className="text-sm text-slate-500">Loading hotels...</p>
           ) : null}
 
           {!loading && hotels.length === 0 ? (
             <p className="text-sm text-slate-500">
-              No hotels found.
+              No hotels found for the current query.
             </p>
           ) : null}
 
@@ -242,7 +232,7 @@ export default function AdminHotelsPage() {
                   {(hotel.amenities ?? []).slice(0, 3).map((amenity) => (
                     <span
                       key={amenity}
-                      className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${amenityClassName(amenity)}`}
+                      className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700"
                     >
                       {amenity}
                     </span>

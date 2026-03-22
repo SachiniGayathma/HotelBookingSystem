@@ -17,6 +17,9 @@ import HotelEditPage from "./pages/HotelEditPage";
 import HotelDetailsPage from "./pages/HotelDetailsPage";
 import CustomerHotelDetailsPage from "./pages/CustomerHotelDetailsPage";
 import BookingPage from "./pages/BookingPage";
+import AdminAnalyticsPage from './pages/AdminAnalyticsPage';
+import HotelReviewsPage from "./pages/HotelReviewsPage";
+import AddReviewPage from "./pages/AddReviewPage";
 
 function App() {
   return (
@@ -35,6 +38,9 @@ function App() {
         <Route path="/cancel" element={<Cancel />} />
         <Route path="/history/:userId" element={<PaymentHistory />} />
         <Route path="/all-payments" element={<AllPayments />} />
+        <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
+        <Route path="/hotels/:hotelId/reviews" element={<HotelReviewsPage />} />
+        <Route path="/hotels/:hotelId/add-review" element={<AddReviewPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

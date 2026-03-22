@@ -13,7 +13,7 @@ export default function PayButton() {
     try {
       setLoading(true);
       const response = await axios.post(
-        "https://payment-service-app.agreeableocean-2c4c42d0.southeastasia.azurecontainerapps.io/api/payment/create-session",
+        "/api/payment/create-session",
         { amount, userId } // send userId to backend
       );
       window.location.href = response.data.url;
