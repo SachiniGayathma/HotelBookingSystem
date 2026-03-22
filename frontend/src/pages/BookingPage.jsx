@@ -167,7 +167,11 @@ export default function BookingPage() {
         setAvailabilityMessage("Sorry, no rooms are available for the selected dates.");
       }
     } catch (error) {
-      setAvailabilityMessage("Availability check failed. Please try again.");
+      const backendMessage =
+        error?.response?.data && typeof error.response.data === "string"
+          ? error.response.data
+          : "Availability check failed. Please try again.";
+      setAvailabilityMessage(backendMessage);
       setIsAvailable(false);
       setAvailabilityChecked(true);
       console.error(error);
