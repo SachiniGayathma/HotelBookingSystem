@@ -71,7 +71,7 @@ export default function AllPayments() {
                       {p.productName}
                     </td>
 
-                    <td className="px-6 py-4 text-xs text-gray-400 break-all">
+                    <td className="px-5 py-4 text-xs text-gray-400 break-all">
                       {p.stripeSessionId}
                     </td>
                   </tr>
