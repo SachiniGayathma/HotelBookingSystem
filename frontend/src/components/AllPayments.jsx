@@ -50,7 +50,7 @@ export default function AllPayments() {
               {payments.length === 0 ? (
                 <tr>
                   <td colSpan="4" className="text-center py-6 text-gray-500">
-                    No payments found
+                    No any payments found
                   </td>
                 </tr>
               ) : (
@@ -63,7 +63,7 @@ export default function AllPayments() {
                       {p.userId}
                     </td>
 
-                    <td className="px-6 py-4 text-rose-500 font-semibold">
+                    <td className="px-6 py-4 text-rose-400 font-semibold">
                       ${(p.amount / 100).toFixed(2)}
                     </td>
 
@@ -71,7 +71,7 @@ export default function AllPayments() {
                       {p.productName}
                     </td>
 
-                    <td className="px-5 py-4 text-xs text-gray-400 break-all">
+                    <td className="px-6 py-4 text-xs text-gray-400 break-all">
                       {p.stripeSessionId}
                     </td>
                   </tr>
