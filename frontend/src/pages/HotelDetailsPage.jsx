@@ -8,6 +8,7 @@ import {
   getHotelById,
   reserveRoom,
 } from "../services/hotelApi";
+//test comment
 
 const AMENITY_STYLES = {
   WIFI: "bg-sky-100 text-sky-700 border-sky-200",
