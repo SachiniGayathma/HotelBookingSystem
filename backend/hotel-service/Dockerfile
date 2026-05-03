@@ -23,8 +23,15 @@ FROM eclipse-temurin:17-jre-jammy
 
 WORKDIR /app
 
+RUN groupadd --system --gid 1001 appgroup && \
+    useradd --system --uid 1001 --gid appgroup --no-create-home --shell /usr/sbin/nologin appuser
+
 # Copy built JAR from build stage
 COPY --from=build /app/target/hotel-service-0.0.1-SNAPSHOT.jar app.jar
+
+RUN chown -R appuser:appgroup /app
+
+USER appuser
 
 # Expose correct port
 EXPOSE 8081

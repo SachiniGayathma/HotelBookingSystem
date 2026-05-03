@@ -21,6 +21,13 @@ COPY src ./src
 # Build the application
 RUN ./mvnw clean package -DskipTests
 
+RUN groupadd --system --gid 1001 appgroup && \
+    useradd --system --uid 1001 --gid appgroup --no-create-home --shell /usr/sbin/nologin appuser
+
+RUN chown -R appuser:appgroup /app
+
+USER appuser
+
 # Expose port
 EXPOSE 8080
 
