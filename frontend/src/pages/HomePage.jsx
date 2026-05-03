@@ -61,8 +61,7 @@ const stays = [
   },
 ];
 
-const quickActions = [
-];
+const quickActions = [{ to: "/hotels", label: "Search hotels" }];
 
 export default function HomePage() {
   return (
