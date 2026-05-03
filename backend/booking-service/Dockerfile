@@ -10,21 +10,17 @@ COPY mvnw.cmd .
 COPY .mvn .mvn
 COPY pom.xml .
 
-RUN chmod +x mvnw
-
 # Download dependencies (for faster builds)
-RUN ./mvnw dependency:go-offline
+RUN chmod +x mvnw && ./mvnw dependency:go-offline
 
 # Copy source code
 COPY src ./src
 
-# Build the application
-RUN ./mvnw clean package -DskipTests
-
-RUN groupadd --system --gid 1001 appgroup && \
-    useradd --system --uid 1001 --gid appgroup --no-create-home --shell /usr/sbin/nologin appuser
-
-RUN chown -R appuser:appgroup /app
+# Build the application, then create non-root user and fix ownership
+RUN ./mvnw clean package -DskipTests && \
+    groupadd --system --gid 1001 appgroup && \
+    useradd --system --uid 1001 --gid appgroup --no-create-home --shell /usr/sbin/nologin appuser && \
+    chown -R appuser:appgroup /app
 
 USER appuser
 
