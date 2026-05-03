@@ -1,13 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { AMENITY_OPTIONS } from "../../services/hotelApi";
 
-function parseCsvList(csvText) {
-  return csvText
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
 function amenitiesFromInitial(initialHotel) {
   return new Set(initialHotel?.amenities ?? []);
 }
@@ -46,8 +39,10 @@ export default function HotelForm({
     initialHotel?.description ?? "",
   );
   const fileInputRef = useRef(null);
-  const [imagesCsv, setImagesCsv] = useState(
-    (initialHotel?.images ?? []).join(", "),
+  const [existingImages, setExistingImages] = useState(
+    Array.isArray(initialHotel?.images)
+      ? initialHotel.images.filter(Boolean)
+      : [],
   );
   const [uploadedImages, setUploadedImages] = useState([]);
   const [uploadError, setUploadError] = useState("");
@@ -83,10 +78,7 @@ export default function HotelForm({
       longitude: Number(longitude) || 0,
       description: description.trim(),
       amenities: Array.from(selectedAmenities),
-      images: [
-        ...parseCsvList(imagesCsv),
-        ...uploadedImages.map((item) => item.src),
-      ],
+      images: [...existingImages, ...uploadedImages.map((item) => item.src)],
       rooms: initialHotel?.rooms ?? [],
     };
 
@@ -130,6 +122,12 @@ export default function HotelForm({
 
   function removeUploadedImage(indexToRemove) {
     setUploadedImages((previous) =>
+      previous.filter((_, index) => index !== indexToRemove),
+    );
+  }
+
+  function removeExistingImage(indexToRemove) {
+    setExistingImages((previous) =>
       previous.filter((_, index) => index !== indexToRemove),
     );
   }
@@ -255,6 +253,35 @@ export default function HotelForm({
           </p>
         ) : null}
 
+        {existingImages.length ? (
+          <div className="grid gap-2">
+            <p className="text-sm font-medium text-slate-700">
+              Existing images
+            </p>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {existingImages.map((imageSrc, index) => (
+                <div
+                  key={`${imageSrc.slice(0, 24)}-${index}`}
+                  className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
+                >
+                  <img
+                    src={imageSrc}
+                    alt={`Existing hotel image ${index + 1}`}
+                    className="h-24 w-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeExistingImage(index)}
+                    className="w-full border-t border-slate-200 px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {uploadedImages.length ? (
           <div className="grid gap-2">
             <p className="text-sm font-medium text-slate-700">
@@ -289,20 +316,6 @@ export default function HotelForm({
             </div>
           </div>
         ) : null}
-
-        <label className="grid gap-2 text-sm font-medium text-slate-700">
-          Images (comma separated URLs)
-          <textarea
-            rows={2}
-            value={imagesCsv}
-            onChange={(e) => setImagesCsv(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 outline-none ring-rose-300 transition focus:border-rose-300 focus:ring"
-            placeholder="https://..., https://..."
-          />
-          <span className="text-xs font-normal text-slate-500">
-            Optional: you can still paste URL links here.
-          </span>
-        </label>
 
         <div className="grid gap-2">
           <p className="text-sm font-medium text-slate-700">Amenities</p>

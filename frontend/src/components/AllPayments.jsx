@@ -8,7 +8,7 @@ export default function AllPayments() {
     const fetchPayments = async () => {
       try {
         const res = await axios.get(
-          "https://payment-service-app.agreeableocean-2c4c42d0.southeastasia.azurecontainerapps.io/api/payment/all"
+          "https://payment-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io/api/payment/all"
         );
         setPayments(res.data);
       } catch (err) {

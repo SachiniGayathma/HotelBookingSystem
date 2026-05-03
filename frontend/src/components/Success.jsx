@@ -1,19 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import emailjs from "@emailjs/browser";
 import { completeBookingAfterPayment } from "../services/bookingApi";
+import { EMAIL_CONFIG } from "../config";
 
 export default function Success() {
   const [message, setMessage] = useState("Finalizing your booking...");
   const emailSent = useRef(false);
 
- const sendReceiptIfAvailable = async (finalBookingId = null) => {
-    // 1. Lock the email IMMEDIATELY to stop React from sending it twice
+  const sendReceiptIfAvailable = async (finalBookingId = null) => {
+    // 1. Lock the email immediately to prevent duplicate sends on React rerenders.
     if (emailSent.current) return;
     const bookingDataStr = localStorage.getItem("recentBooking");
     if (!bookingDataStr) return;
 
-    emailSent.current = true; 
-    localStorage.removeItem("recentBooking"); 
+    emailSent.current = true;
+    localStorage.removeItem("recentBooking");
 
     try {
       const bookingData = JSON.parse(bookingDataStr);
@@ -22,12 +23,19 @@ export default function Success() {
         booking_id: finalBookingId || bookingData.booking_id || "N/A",
       };
 
+      // await emailjs.send(
+      //   "service_xolaaok",
+      //   "template_j1cm2uc",
+      //   payload,
+      //   "VRwWuvzY3ns5B0bfM",
+      // );
       await emailjs.send(
-        "service_xolaaok",
-        "template_j1cm2uc",
+        EMAIL_CONFIG.SERVICE_ID,
+        EMAIL_CONFIG.TEMPLATE_ID,
         payload,
-        "VRwWuvzY3ns5B0bfM",
+        EMAIL_CONFIG.PUBLIC_KEY,
       );
+
       console.log("Digital receipt sent successfully");
     } catch (err) {
       console.error("Digital receipt failed:", err);
@@ -63,7 +71,7 @@ useEffect(() => {
           `Payment succeeded, but booking finalization failed: ${error?.response?.data || error.message}`,
         );
       } finally {
-        // 2. Moved to the 'finally' block so the customer ALWAYS gets their receipt!
+        // 2. Always attempt receipt sending even if booking finalization fails.
         await sendReceiptIfAvailable(completedBookingId);
       }
     };
@@ -73,9 +81,7 @@ useEffect(() => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-green-100 px-4">
-      
       <div className="bg-white shadow-lg rounded-2xl p-8 max-w-md w-full text-center border border-green-100">
-        
         {/* Icon */}
         <div className="flex justify-center mb-4">
           <div className="bg-green-100 text-green-600 rounded-full p-4">
@@ -87,7 +93,11 @@ useEffect(() => {
               stroke="currentColor"
               strokeWidth={2}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           </div>
         </div>
@@ -98,9 +108,7 @@ useEffect(() => {
         </h2>
 
         {/* Subtitle */}
-        <p className="text-gray-500 text-sm mb-6">
-          {message}
-        </p>
+        <p className="text-gray-500 text-sm mb-6">{message}</p>
 
         {/* Button */}
         <a
@@ -109,7 +117,6 @@ useEffect(() => {
         >
           Go to Home
         </a>
-
       </div>
     </div>
   );

@@ -8,21 +8,43 @@ export default function AddReviewPage() {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const handleSubmit = async (e) => {
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setLoading(true);
+  //   try {
+  //     await axios.post("https://notify-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io/reviews", {
+  //       hotelId,
+  //       userId: "user123", 
+  //       rating,
+  //       comment
+  //     });
+  //     // Redirect to the reviews page upon success
+  //     navigate(`/hotels/${hotelId}/reviews`);
+  //   } catch (err) {
+  //     alert("Error: " + (err.response?.data?.message || "Failed to post review"));
+  //   } finally { 
+  //     setLoading(false); 
+  //   }
+  // };
+const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post("http://localhost:8084/reviews", {
+      await axios.post("https://notify-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io/reviews", {
         hotelId,
-        userId: "user123", 
+        userId: "user123", // Note: Ensure you make a test booking using this exact user ID!
         rating,
         comment
       });
-      // Redirect to the reviews page upon success
       navigate(`/hotels/${hotelId}/reviews`);
     } catch (err) {
-      alert("Error: " + (err.response?.data?.message || "Failed to post review"));
+      const errorMessage = typeof err.response?.data === 'string' 
+        ? err.response.data 
+        : (err.response?.data?.message || "Failed to post review");
+        
+      setErrorMsg(errorMessage); // This replaces the alert!
     } finally { 
       setLoading(false); 
     }
@@ -47,6 +69,15 @@ export default function AddReviewPage() {
           </button>
         </div>
 
+{errorMsg && (
+          <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 text-sm font-bold flex items-start gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <span>{errorMsg}</span>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-6">
           
           {/* Interactive Star Rating */}

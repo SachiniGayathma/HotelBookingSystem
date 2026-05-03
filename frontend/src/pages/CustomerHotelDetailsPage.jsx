@@ -38,10 +38,25 @@ export default function CustomerHotelDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [failedImageIndexes, setFailedImageIndexes] = useState(new Set());
 
-  const hotelImages = hotel?.images?.length
-    ? hotel.images
-    : [FALLBACK_HOTEL_IMAGE];
+  const hotelImages = useMemo(() => {
+    const rawImages = Array.isArray(hotel?.images) ? hotel.images : [];
+    const validImages = rawImages.filter((image) => {
+      if (typeof image !== "string") {
+        return false;
+      }
+
+      const normalized = image.trim();
+      return (
+        normalized.startsWith("http://") ||
+        normalized.startsWith("https://") ||
+        normalized.startsWith("data:image/")
+      );
+    });
+
+    return validImages.length ? validImages : [FALLBACK_HOTEL_IMAGE];
+  }, [hotel?.images]);
 
   /* --- REVIEWS ADDITION START --- */
   const [avgRating, setAvgRating] = useState(0);
@@ -50,7 +65,7 @@ export default function CustomerHotelDetailsPage() {
     const fetchAvgRating = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:8084/reviews/hotel/${id}`,
+          `https://notify-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io/reviews/hotel/${id}`,
         );
         if (res.data.length > 0) {
           const sum = res.data.reduce((acc, rev) => acc + rev.rating, 0);
@@ -119,6 +134,7 @@ export default function CustomerHotelDetailsPage() {
       const response = await getHotelById(id);
       setHotel(response.data);
       setActiveImageIndex(0);
+      setFailedImageIndexes(new Set());
     } catch (requestError) {
       setError(
         requestError?.response?.data?.message ||
@@ -161,7 +177,36 @@ export default function CustomerHotelDetailsPage() {
       return;
     }
 
-    showNextImage();
+    setFailedImageIndexes((previous) => {
+      const next = new Set(previous);
+      next.add(activeImageIndex);
+
+      if (next.size >= hotelImages.length) {
+        setHotel((current) => {
+          if (!current) {
+            return current;
+          }
+          return {
+            ...current,
+            images: [FALLBACK_HOTEL_IMAGE],
+          };
+        });
+        setActiveImageIndex(0);
+        return new Set();
+      }
+
+      let nextIndex = activeImageIndex;
+      for (let offset = 1; offset < hotelImages.length; offset += 1) {
+        const candidate = (activeImageIndex + offset) % hotelImages.length;
+        if (!next.has(candidate)) {
+          nextIndex = candidate;
+          break;
+        }
+      }
+
+      setActiveImageIndex(nextIndex);
+      return next;
+    });
   }
 
   return (

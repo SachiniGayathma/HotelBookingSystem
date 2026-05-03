@@ -2,6 +2,9 @@ package com.ctse.booking_service.Services;
 
 import com.ctse.booking_service.Model.Booking;
 import com.ctse.booking_service.Repositories.BookingRepository;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -15,17 +18,41 @@ import java.util.Optional;
 
 @Service
 public class BookingService {
+    private static final Logger logger = LoggerFactory.getLogger(BookingService.class);
+    private static final String DEFAULT_HOTEL_SERVICE_URL = "https://hotel-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io";
+    private static final String DEFAULT_PAYMENT_SERVICE_URL = "https://payment-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io";
+
     private final BookingRepository repository;
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${hotel.service.url:http://localhost:8081}") // Default to local, override in prod
+    @Value("${booking.hotel.service.url:https://hotel-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io}")
     private String hotelServiceUrl;
 
-    @Value("${payment.service.url:http://localhost:8082}")
+    @Value("${booking.payment.service.url:https://payment-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io}")
     private String paymentServiceUrl;
 
     public BookingService(BookingRepository repository) {
         this.repository = repository;
+    }
+
+    @PostConstruct
+    public void normalizeConfiguredServiceUrls() {
+        hotelServiceUrl = normalizeServiceUrl(hotelServiceUrl, DEFAULT_HOTEL_SERVICE_URL);
+        paymentServiceUrl = normalizeServiceUrl(paymentServiceUrl, DEFAULT_PAYMENT_SERVICE_URL);
+        logger.info("Resolved booking service dependencies: hotelServiceUrl={}, paymentServiceUrl={}", hotelServiceUrl, paymentServiceUrl);
+    }
+
+    private String normalizeServiceUrl(String configuredUrl, String fallbackUrl) {
+        if (configuredUrl == null || configuredUrl.isBlank()) {
+            return fallbackUrl;
+        }
+
+        String normalized = configuredUrl.trim();
+        String lower = normalized.toLowerCase();
+        if (lower.contains("localhost") || lower.contains("127.0.0.1")) {
+            return fallbackUrl;
+        }
+        return normalized;
     }
 
     // Check availability by calling hotel service.
@@ -207,7 +234,7 @@ public class BookingService {
             try {
                 System.out.println("Triggering Notification Webhook...");
                 org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
-                String notifyUrl = "http://localhost:8084/notifications/booking-success";
+                String notifyUrl = "https://notify-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io/notifications/booking-success";
                 restTemplate.postForObject(notifyUrl, savedBooking, String.class);
             } catch (Exception ex) {
                 System.out.println("Webhook failed, but booking succeeded: " + ex.getMessage());

@@ -253,14 +253,20 @@ export default function AdminHotelsPage() {
                 </p>
 
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {(hotel.amenities ?? []).slice(0, 3).map((amenity) => (
-                    <span
-                      key={amenity}
-                      className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${amenityClassName(amenity)}`}
-                    >
-                      {amenity}
+                  {(hotel.amenities ?? []).length ? (
+                    (hotel.amenities ?? []).map((amenity) => (
+                      <span
+                        key={amenity}
+                        className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${amenityClassName(amenity)}`}
+                      >
+                        {amenity}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-500">
+                      No amenities listed
                     </span>
-                  ))}
+                  )}
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-2">

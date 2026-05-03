@@ -7,20 +7,20 @@ export default defineConfig({
   server: {
     proxy: {
       "/api/bookings": {
-        target: "http://localhost:8080",
+        target: "https://booking-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io",
         changeOrigin: true,
       },
       "/api/payment": {
-        target: "http://localhost:8082",
+        target: "https://payment-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io",
         changeOrigin: true,
       },
       "/api/hotels": {
-        target: "http://localhost:8081",
+        target: "https://hotel-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
       "/hotels": {
-        target: "http://localhost:8081",
+        target: "https://hotel-service-app.jollyforest-5b37db64.southeastasia.azurecontainerapps.io",
         changeOrigin: true,
       },
     },
