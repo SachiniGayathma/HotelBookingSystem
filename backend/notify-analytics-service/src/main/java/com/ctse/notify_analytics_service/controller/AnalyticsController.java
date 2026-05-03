@@ -12,9 +12,10 @@ import java.util.*;
 @RequestMapping("/analytics")
 @CrossOrigin(origins = "*")
 public class AnalyticsController {
+    //test
 
     private final RestTemplate restTemplate = new RestTemplate();
-    private final ReviewRepository reviewRepository; // We need this for the Star Ratings!
+    private final ReviewRepository reviewRepository; 
 
     public AnalyticsController(ReviewRepository reviewRepository) {
         this.reviewRepository = reviewRepository;
