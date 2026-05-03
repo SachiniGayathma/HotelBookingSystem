@@ -26,36 +26,18 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Build Hotel Service
-        working-directory: backend/hotel-service
+      - name: Build all backend services
+        working-directory: backend
         run: |
-          chmod +x ./mvnw
-          ./mvnw clean install
-
-      - name: Build Booking Service
-        working-directory: backend/booking-service
-        run: |
-          chmod +x ./mvnw
-          ./mvnw clean install
-
-      - name: Build Payment Service
-        working-directory: backend/payment-service
-        run: |
-          chmod +x ./mvnw
-          ./mvnw clean install
-
-      - name: Build Notify Analytics Service
-        working-directory: backend/notify-analytics-service
-        run: |
-          chmod +x ./mvnw
-          ./mvnw clean install
+          chmod +x hotel-service/mvnw
+          ./hotel-service/mvnw -f pom.xml clean install
 
       - name: SonarCloud Scan
         if: github.event_name == 'pull_request' && github.base_ref == 'main'
-        working-directory: backend/hotel-service
+        working-directory: backend
         run: |
-          chmod +x ./mvnw
-          ./mvnw sonar:sonar -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+          chmod +x hotel-service/mvnw
+          ./hotel-service/mvnw -f pom.xml sonar:sonar -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
       - name: Login to Azure Container Registry
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
