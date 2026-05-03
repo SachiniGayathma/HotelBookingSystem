@@ -15,13 +15,27 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+      ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+      ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+      AZURE_CONTAINERAPPS_ENV: ${{ secrets.AZURE_CONTAINERAPPS_ENV }}
+      AZURE_HOTEL_APP_NAME: ${{ secrets.AZURE_HOTEL_APP_NAME }}
+      AZURE_BOOKING_APP_NAME: ${{ secrets.AZURE_BOOKING_APP_NAME }}
+      AZURE_PAYMENT_APP_NAME: ${{ secrets.AZURE_PAYMENT_APP_NAME }}
+      AZURE_NOTIFY_APP_NAME: ${{ secrets.AZURE_NOTIFY_APP_NAME }}
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
         with:
           distribution: temurin
           java-version: "17"
@@ -55,40 +69,40 @@ jobs:
         working-directory: backend/hotel-service
         run: |
           chmod +x ./mvnw
-          ./mvnw sonar:sonar -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+          ./mvnw sonar:sonar -Dsonar.login="$SONAR_TOKEN"
 
       - name: Login to Azure Container Registry
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         run: |
-          echo "${{ secrets.ACR_PASSWORD }}" | docker login "${{ secrets.ACR_LOGIN_SERVER }}" -u "${{ secrets.ACR_USERNAME }}" --password-stdin
+          echo "$ACR_PASSWORD" | docker login "$ACR_LOGIN_SERVER" -u "$ACR_USERNAME" --password-stdin
 
       - name: Build and Push Hotel Image
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         run: |
-          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/hotel-service:${{ github.sha }} ./backend/hotel-service
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/hotel-service:${{ github.sha }}
+          docker build -t "$ACR_LOGIN_SERVER/hotel-service:${{ github.sha }}" ./backend/hotel-service
+          docker push "$ACR_LOGIN_SERVER/hotel-service:${{ github.sha }}"
 
       - name: Build and Push Booking Image
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         run: |
-          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/booking-service:${{ github.sha }} ./backend/booking-service
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/booking-service:${{ github.sha }}
+          docker build -t "$ACR_LOGIN_SERVER/booking-service:${{ github.sha }}" ./backend/booking-service
+          docker push "$ACR_LOGIN_SERVER/booking-service:${{ github.sha }}"
 
       - name: Build and Push Payment Image
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         run: |
-          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/payment-service:${{ github.sha }} ./backend/payment-service
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/payment-service:${{ github.sha }}
+          docker build -t "$ACR_LOGIN_SERVER/payment-service:${{ github.sha }}" ./backend/payment-service
+          docker push "$ACR_LOGIN_SERVER/payment-service:${{ github.sha }}"
 
       - name: Build and Push Notify Analytics Image
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         run: |
-          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/notify-analytics-service:${{ github.sha }} ./backend/notify-analytics-service
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/notify-analytics-service:${{ github.sha }}
+          docker build -t "$ACR_LOGIN_SERVER/notify-analytics-service:${{ github.sha }}" ./backend/notify-analytics-service
+          docker push "$ACR_LOGIN_SERVER/notify-analytics-service:${{ github.sha }}"
 
       - name: Azure Login
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-        uses: azure/login@v2
+        uses: Azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -102,110 +116,111 @@ jobs:
       - name: Check deploy values
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         run: |
-          echo "RG=${{ secrets.AZURE_RESOURCE_GROUP }}"
-          echo "ENV=${{ secrets.AZURE_CONTAINERAPPS_ENV }}"
-          echo "HOTEL_APP=${{ secrets.AZURE_HOTEL_APP_NAME }}"
-          echo "BOOKING_APP=${{ secrets.AZURE_BOOKING_APP_NAME }}"
-          echo "PAYMENT_APP=${{ secrets.AZURE_PAYMENT_APP_NAME }}"
-          echo "NOTIFY_APP=${{ secrets.AZURE_NOTIFY_APP_NAME }}"
-          echo "ACR=${{ secrets.ACR_LOGIN_SERVER }}"
+          test -n "$AZURE_RESOURCE_GROUP"
+          test -n "$AZURE_CONTAINERAPPS_ENV"
+          test -n "$AZURE_HOTEL_APP_NAME"
+          test -n "$AZURE_BOOKING_APP_NAME"
+          test -n "$AZURE_PAYMENT_APP_NAME"
+          test -n "$AZURE_NOTIFY_APP_NAME"
+          test -n "$ACR_LOGIN_SERVER"
+          echo "Deploy configuration variables are set."
 
       - name: Deploy Hotel Service
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         run: |
           if az containerapp show \
-            --name "${{ secrets.AZURE_HOTEL_APP_NAME }}" \
-            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" > /dev/null 2>&1; then
+            --name "$AZURE_HOTEL_APP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" > /dev/null 2>&1; then
             echo "Hotel app exists. Updating..."
             az containerapp update \
-              --name "${{ secrets.AZURE_HOTEL_APP_NAME }}" \
-              --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
-              --image "${{ secrets.ACR_LOGIN_SERVER }}/hotel-service:${{ github.sha }}"
+              --name "$AZURE_HOTEL_APP_NAME" \
+              --resource-group "$AZURE_RESOURCE_GROUP" \
+              --image "$ACR_LOGIN_SERVER/hotel-service:${{ github.sha }}"
           else
             echo "Hotel app does not exist. Creating..."
             az containerapp create \
-              --name "${{ secrets.AZURE_HOTEL_APP_NAME }}" \
-              --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
-              --environment "${{ secrets.AZURE_CONTAINERAPPS_ENV }}" \
-              --image "${{ secrets.ACR_LOGIN_SERVER }}/hotel-service:${{ github.sha }}" \
+              --name "$AZURE_HOTEL_APP_NAME" \
+              --resource-group "$AZURE_RESOURCE_GROUP" \
+              --environment "$AZURE_CONTAINERAPPS_ENV" \
+              --image "$ACR_LOGIN_SERVER/hotel-service:${{ github.sha }}" \
               --ingress external \
               --target-port 8081 \
-              --registry-server "${{ secrets.ACR_LOGIN_SERVER }}" \
-              --registry-username "${{ secrets.ACR_USERNAME }}" \
-              --registry-password "${{ secrets.ACR_PASSWORD }}"
+              --registry-server "$ACR_LOGIN_SERVER" \
+              --registry-username "$ACR_USERNAME" \
+              --registry-password "$ACR_PASSWORD"
           fi
 
       - name: Deploy Booking Service
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         run: |
           if az containerapp show \
-            --name "${{ secrets.AZURE_BOOKING_APP_NAME }}" \
-            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" > /dev/null 2>&1; then
+            --name "$AZURE_BOOKING_APP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" > /dev/null 2>&1; then
             echo "Booking app exists. Updating..."
             az containerapp update \
-              --name "${{ secrets.AZURE_BOOKING_APP_NAME }}" \
-              --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
-              --image "${{ secrets.ACR_LOGIN_SERVER }}/booking-service:${{ github.sha }}"
+              --name "$AZURE_BOOKING_APP_NAME" \
+              --resource-group "$AZURE_RESOURCE_GROUP" \
+              --image "$ACR_LOGIN_SERVER/booking-service:${{ github.sha }}"
           else
             echo "Booking app does not exist. Creating..."
             az containerapp create \
-              --name "${{ secrets.AZURE_BOOKING_APP_NAME }}" \
-              --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
-              --environment "${{ secrets.AZURE_CONTAINERAPPS_ENV }}" \
-              --image "${{ secrets.ACR_LOGIN_SERVER }}/booking-service:${{ github.sha }}" \
+              --name "$AZURE_BOOKING_APP_NAME" \
+              --resource-group "$AZURE_RESOURCE_GROUP" \
+              --environment "$AZURE_CONTAINERAPPS_ENV" \
+              --image "$ACR_LOGIN_SERVER/booking-service:${{ github.sha }}" \
               --ingress external \
               --target-port 8080 \
-              --registry-server "${{ secrets.ACR_LOGIN_SERVER }}" \
-              --registry-username "${{ secrets.ACR_USERNAME }}" \
-              --registry-password "${{ secrets.ACR_PASSWORD }}"
+              --registry-server "$ACR_LOGIN_SERVER" \
+              --registry-username "$ACR_USERNAME" \
+              --registry-password "$ACR_PASSWORD"
           fi
 
       - name: Deploy Payment Service
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         run: |
           if az containerapp show \
-            --name "${{ secrets.AZURE_PAYMENT_APP_NAME }}" \
-            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" > /dev/null 2>&1; then
+            --name "$AZURE_PAYMENT_APP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" > /dev/null 2>&1; then
             echo "Payment app exists. Updating..."
             az containerapp update \
-              --name "${{ secrets.AZURE_PAYMENT_APP_NAME }}" \
-              --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
-              --image "${{ secrets.ACR_LOGIN_SERVER }}/payment-service:${{ github.sha }}"
+              --name "$AZURE_PAYMENT_APP_NAME" \
+              --resource-group "$AZURE_RESOURCE_GROUP" \
+              --image "$ACR_LOGIN_SERVER/payment-service:${{ github.sha }}"
           else
             echo "Payment app does not exist. Creating..."
             az containerapp create \
-              --name "${{ secrets.AZURE_PAYMENT_APP_NAME }}" \
-              --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
-              --environment "${{ secrets.AZURE_CONTAINERAPPS_ENV }}" \
-              --image "${{ secrets.ACR_LOGIN_SERVER }}/payment-service:${{ github.sha }}" \
+              --name "$AZURE_PAYMENT_APP_NAME" \
+              --resource-group "$AZURE_RESOURCE_GROUP" \
+              --environment "$AZURE_CONTAINERAPPS_ENV" \
+              --image "$ACR_LOGIN_SERVER/payment-service:${{ github.sha }}" \
               --ingress external \
               --target-port 8082 \
-              --registry-server "${{ secrets.ACR_LOGIN_SERVER }}" \
-              --registry-username "${{ secrets.ACR_USERNAME }}" \
-              --registry-password "${{ secrets.ACR_PASSWORD }}"
+              --registry-server "$ACR_LOGIN_SERVER" \
+              --registry-username "$ACR_USERNAME" \
+              --registry-password "$ACR_PASSWORD"
           fi
 
       - name: Deploy Notify Analytics Service
         if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         run: |
           if az containerapp show \
-            --name "${{ secrets.AZURE_NOTIFY_APP_NAME }}" \
-            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" > /dev/null 2>&1; then
+            --name "$AZURE_NOTIFY_APP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" > /dev/null 2>&1; then
             echo "Notify Analytics app exists. Updating..."
             az containerapp update \
-              --name "${{ secrets.AZURE_NOTIFY_APP_NAME }}" \
-              --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
-              --image "${{ secrets.ACR_LOGIN_SERVER }}/notify-analytics-service:${{ github.sha }}"
+              --name "$AZURE_NOTIFY_APP_NAME" \
+              --resource-group "$AZURE_RESOURCE_GROUP" \
+              --image "$ACR_LOGIN_SERVER/notify-analytics-service:${{ github.sha }}"
           else
             echo "Notify Analytics app does not exist. Creating..."
             az containerapp create \
-              --name "${{ secrets.AZURE_NOTIFY_APP_NAME }}" \
-              --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
-              --environment "${{ secrets.AZURE_CONTAINERAPPS_ENV }}" \
-              --image "${{ secrets.ACR_LOGIN_SERVER }}/notify-analytics-service:${{ github.sha }}" \
+              --name "$AZURE_NOTIFY_APP_NAME" \
+              --resource-group "$AZURE_RESOURCE_GROUP" \
+              --environment "$AZURE_CONTAINERAPPS_ENV" \
+              --image "$ACR_LOGIN_SERVER/notify-analytics-service:${{ github.sha }}" \
               --ingress external \
               --target-port 8084 \
-              --registry-server "${{ secrets.ACR_LOGIN_SERVER }}" \
-              --registry-username "${{ secrets.ACR_USERNAME }}" \
-              --registry-password "${{ secrets.ACR_PASSWORD }}"
+              --registry-server "$ACR_LOGIN_SERVER" \
+              --registry-username "$ACR_USERNAME" \
+              --registry-password "$ACR_PASSWORD"
           fi
