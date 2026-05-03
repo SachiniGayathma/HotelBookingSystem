@@ -7,12 +7,16 @@ COPY mvnw.cmd .
 COPY .mvn .mvn
 COPY pom.xml .
 
-RUN chmod +x mvnw
-RUN ./mvnw dependency:go-offline
+RUN chmod +x mvnw && ./mvnw dependency:go-offline
 
 COPY src ./src
 
-RUN ./mvnw clean package -DskipTests
+RUN ./mvnw clean package -DskipTests && \
+    groupadd --system --gid 1001 appgroup && \
+    useradd --system --uid 1001 --gid appgroup --no-create-home --shell /usr/sbin/nologin appuser && \
+    chown -R appuser:appgroup /app
+
+USER appuser
 
 EXPOSE 8082
 
